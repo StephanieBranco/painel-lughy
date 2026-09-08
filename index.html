@@ -287,7 +287,7 @@ canvas { display: block; }
     </div>
   </div>
   <div class="hd-right">
-    <div class="hd-period">Semana 01/09 – 07/09/2026</div>
+    <div class="hd-period">Semana 31/08 – 06/09/2026</div>
     <div class="hd-gen">Gerado em 08/09/2026 · Mês atual: 01–08/09</div>
   </div>
 </div>
@@ -313,15 +313,15 @@ canvas { display: block; }
             <div class="kpi-lbl">Ligações na semana</div>
           </div>
           <div class="kpi-tile">
-            <div class="kpi-n" style="color:var(--steph)">2</div>
+            <div class="kpi-n" style="color:var(--steph)">1</div>
             <div class="kpi-lbl">Reuniões na semana</div>
           </div>
           <div class="kpi-tile">
-            <div class="kpi-n" style="color:var(--steph)">100</div>
+            <div class="kpi-n" style="color:var(--steph)">129</div>
             <div class="kpi-lbl">Atividades concluídas</div>
           </div>
           <div class="kpi-tile">
-            <div class="kpi-n" style="color:var(--danger)">26</div>
+            <div class="kpi-n" style="color:var(--danger)">3</div>
             <div class="kpi-lbl">Atividades atrasadas</div>
           </div>
         </div>
@@ -340,15 +340,15 @@ canvas { display: block; }
             <div class="kpi-lbl">Ligações na semana</div>
           </div>
           <div class="kpi-tile">
-            <div class="kpi-n" style="color:var(--luis)">4</div>
+            <div class="kpi-n" style="color:var(--luis)">5</div>
             <div class="kpi-lbl">Reuniões na semana</div>
           </div>
           <div class="kpi-tile">
-            <div class="kpi-n" style="color:var(--luis)">106</div>
+            <div class="kpi-n" style="color:var(--luis)">112</div>
             <div class="kpi-lbl">Atividades concluídas</div>
           </div>
           <div class="kpi-tile">
-            <div class="kpi-n" style="color:var(--danger)">16</div>
+            <div class="kpi-n" style="color:var(--danger)">4</div>
             <div class="kpi-lbl">Atividades atrasadas</div>
           </div>
         </div>
@@ -367,19 +367,19 @@ canvas { display: block; }
       <div class="hbar-row">
         <div class="hbar-label">Stephanie</div>
         <div class="hbar-track">
-          <div class="hbar-fill s" style="width: 61.9%">26</div>
+          <div class="hbar-fill s" style="width: 42.9%">3</div>
         </div>
       </div>
       <div class="hbar-row">
         <div class="hbar-label">Luis</div>
         <div class="hbar-track">
-          <div class="hbar-fill l" style="width: 38.1%">16</div>
+          <div class="hbar-fill l" style="width: 57.1%">4</div>
         </div>
       </div>
       <div class="hbar-row" style="margin-top:4px">
         <div class="hbar-label" style="color:var(--gold); font-weight:600">Total</div>
         <div class="hbar-track">
-          <div class="hbar-fill tot" style="width: 100%">42</div>
+          <div class="hbar-fill tot" style="width: 100%">7</div>
         </div>
       </div>
     </div>
@@ -728,7 +728,7 @@ canvas { display: block; }
       <div class="monthly-head">Mês atual — Set 1–8</div>
       <div class="monthly-row">
         <span class="monthly-name">Stephanie</span>
-        <span class="monthly-val" style="color:var(--steph)">2</span>
+        <span class="monthly-val" style="color:var(--steph)">1</span>
       </div>
       <div class="monthly-row">
         <span class="monthly-name">Luis</span>
@@ -737,7 +737,7 @@ canvas { display: block; }
       <hr class="monthly-hr">
       <div class="monthly-total">
         <span class="monthly-total-lbl">Total mês</span>
-        <span class="monthly-total-val">6</span>
+        <span class="monthly-total-val">5</span>
       </div>
     </div>
   </div>
@@ -763,7 +763,7 @@ canvas { display: block; }
   const BORDER = s.getPropertyValue('--border').trim() || '#252a45';
   const MUTED  = s.getPropertyValue('--muted').trim()  || '#5e658a';
 
-  const DAYS = ['Ter 01', 'Qua 02', 'Qui 03', 'Sex 04', 'Sáb 05', 'Dom 06', 'Seg 07'];
+  const DAYS = ['Seg 31', 'Ter 01', 'Qua 02', 'Qui 03', 'Sex 04', 'Sáb 05', 'Dom 06'];
 
   const baseOpts = {
     responsive: true,
@@ -806,8 +806,8 @@ canvas { display: block; }
     data: {
       labels: DAYS,
       datasets: [
-        makeDataset('Stephanie', [0,0,0,1,0,0,0], STEPH),
-        makeDataset('Luis',      [0,0,1,1,0,0,0], LUIS)
+        makeDataset('Stephanie', [0,0,0,0,1,0,0], STEPH),
+        makeDataset('Luis',      [0,0,0,1,1,0,0], LUIS)
       ]
     },
     options: {
@@ -825,8 +825,8 @@ canvas { display: block; }
     data: {
       labels: DAYS,
       datasets: [
-        makeDataset('Stephanie', [23,24,20,33,0,0,0], STEPH),
-        makeDataset('Luis',      [40,12,31,23,0,0,0], LUIS)
+        makeDataset('Stephanie', [29,23,24,20,33,0,0], STEPH),
+        makeDataset('Luis',      [6,40,12,31,23,0,0], LUIS)
       ]
     },
     options: {
@@ -844,8 +844,8 @@ canvas { display: block; }
     data: {
       labels: DAYS,
       datasets: [
-        makeDataset('Stephanie', [1,1,0,0,0,0,0], STEPH),
-        makeDataset('Luis',      [4,0,0,0,0,0,0], LUIS)
+        makeDataset('Stephanie', [0,0,1,0,0,0,0], STEPH),
+        makeDataset('Luis',      [1,4,0,0,0,0,0], LUIS)
       ]
     },
     options: baseOpts
