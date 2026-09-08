@@ -1,7 +1,6 @@
 <title>Painel Comercial Lughy</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap">
 <style>
-/* ── TOKENS (dark-first) ─────────────────────────────────────── */
 :root {
   --bg:       #0d1021;
   --s1:       #141829;
@@ -19,262 +18,86 @@
   --danger-lo:rgba(226,92,112,.12);
   --gold:     #f0c040;
   --gold-lo:  rgba(240,192,64,.10);
-
   --r: 10px;
   --r-sm: 6px;
 }
-
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
-    --bg:       #f0f2f9;
-    --s1:       #ffffff;
-    --s2:       #f5f6fc;
-    --s3:       #eaecf6;
-    --border:   #d4d8f0;
-    --text:     #0d1021;
-    --sub:      #4a5080;
-    --muted:    #8890b8;
+    --bg:#f0f2f9;--s1:#ffffff;--s2:#f5f6fc;--s3:#eaecf6;
+    --border:#d4d8f0;--text:#0d1021;--sub:#4a5080;--muted:#8890b8;
   }
 }
 :root[data-theme="light"] {
-  --bg:       #f0f2f9;
-  --s1:       #ffffff;
-  --s2:       #f5f6fc;
-  --s3:       #eaecf6;
-  --border:   #d4d8f0;
-  --text:     #0d1021;
-  --sub:      #4a5080;
-  --muted:    #8890b8;
+  --bg:#f0f2f9;--s1:#ffffff;--s2:#f5f6fc;--s3:#eaecf6;
+  --border:#d4d8f0;--text:#0d1021;--sub:#4a5080;--muted:#8890b8;
 }
-
-/* ── RESET / BASE ─────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'DM Sans', system-ui, sans-serif;
-  font-size: 14px;
-  line-height: 1.5;
-}
-canvas { display: block; }
-
-/* ── HEADER ───────────────────────────────────────────────────── */
-.hd {
-  background: var(--s1);
-  border-bottom: 1px solid var(--border);
-  padding: 20px 32px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-.hd-left { display: flex; align-items: center; gap: 14px; }
-.hd-logo {
-  width: 40px; height: 40px;
-  background: linear-gradient(135deg, var(--steph), #6ea8e8);
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Sora', sans-serif;
-  font-weight: 800; font-size: 17px; color: #fff;
-  flex-shrink: 0;
-}
-.hd-title { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 17px; letter-spacing: -0.2px; }
-.hd-title span { color: var(--steph); }
-.hd-sub { color: var(--sub); font-size: 12.5px; margin-top: 1px; }
-.hd-right { text-align: right; }
-.hd-period { font-family: 'Sora', sans-serif; font-weight: 600; font-size: 13px; }
-.hd-gen { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
-
-/* ── LAYOUT ───────────────────────────────────────────────────── */
-.page { max-width: 1180px; margin: 0 auto; padding: 28px 24px 56px; }
-
-/* ── SECTION HEADER ───────────────────────────────────────────── */
-.sec-head {
-  display: flex; align-items: center; gap: 10px;
-  margin: 32px 0 14px;
-}
-.sec-num {
-  font-family: 'Sora', sans-serif;
-  font-size: 10px; font-weight: 700;
-  color: var(--muted);
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-}
-.sec-title {
-  font-family: 'Sora', sans-serif;
-  font-size: 12px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 1px;
-  color: var(--sub);
-}
-.sec-rule { flex: 1; height: 1px; background: var(--border); }
-
-/* ── CARD ─────────────────────────────────────────────────────── */
-.card {
-  background: var(--s1);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 20px;
-}
-
-/* ── KPI GRID ─────────────────────────────────────────────────── */
-.kpi-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  margin-top: 4px;
-}
-.person-card {
-  background: var(--s1);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  overflow: hidden;
-}
-.person-bar {
-  height: 4px;
-}
-.person-bar.s { background: linear-gradient(90deg, var(--steph), #6ea8e8); }
-.person-bar.l { background: linear-gradient(90deg, var(--luis), #64debb); }
-.person-body { padding: 16px 18px 18px; }
-.person-name {
-  font-family: 'Sora', sans-serif;
-  font-weight: 700; font-size: 14px;
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 14px;
-}
-.person-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  flex-shrink: 0;
-}
-.kpi-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
-.kpi-tile {
-  background: var(--s2);
-  border-radius: var(--r-sm);
-  padding: 12px 10px;
-  text-align: center;
-}
-.kpi-n {
-  font-family: 'Sora', sans-serif;
-  font-size: 32px; font-weight: 800; line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-.kpi-lbl { font-size: 10.5px; color: var(--muted); margin-top: 5px; line-height: 1.3; }
-
-/* ── OVERDUE / HBAR ───────────────────────────────────────────── */
-.hbar-wrap { padding: 4px 0; }
-.hbar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-.hbar-row:last-child { margin-bottom: 0; }
-.hbar-label { width: 80px; text-align: right; font-size: 12.5px; color: var(--sub); flex-shrink: 0; }
-.hbar-track {
-  flex: 1; background: var(--s2); border-radius: 5px; height: 30px;
-  overflow: hidden; position: relative;
-}
-.hbar-fill {
-  height: 100%; border-radius: 5px;
-  display: flex; align-items: center; padding: 0 10px;
-  font-family: 'Sora', sans-serif; font-weight: 700; font-size: 13px;
-  min-width: 42px;
-}
-.hbar-fill.s { background: linear-gradient(90deg, rgba(74,144,217,.55), rgba(74,144,217,.25)); color: var(--steph); }
-.hbar-fill.l { background: linear-gradient(90deg, rgba(46,204,154,.55), rgba(46,204,154,.25)); color: var(--luis); }
-.hbar-fill.tot { background: linear-gradient(90deg, rgba(240,192,64,.4), rgba(240,192,64,.15)); color: var(--gold); }
-
-/* ── FUNNEL ───────────────────────────────────────────────────── */
-.funnel-wrap {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr auto 1fr;
-  gap: 0;
-  align-items: stretch;
-}
-.funnel-stage {
-  background: var(--s1);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 20px 16px;
-  text-align: center;
-  position: relative;
-}
-.funnel-stage-icon { font-size: 20px; margin-bottom: 6px; }
-.funnel-stage-lbl { font-size: 10.5px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 600; margin-bottom: 10px; }
-.funnel-total {
-  font-family: 'Sora', sans-serif;
-  font-size: 44px; font-weight: 800; line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-.funnel-split {
-  display: flex; gap: 14px; justify-content: center;
-  margin-top: 12px;
-}
-.funnel-split-item { text-align: center; }
-.funnel-split-n {
-  font-family: 'Sora', sans-serif;
-  font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-.funnel-split-nm { font-size: 10px; color: var(--muted); margin-top: 3px; }
-.funnel-note { font-size: 10.5px; color: var(--muted); margin-top: 10px; }
-.funnel-arrow {
-  display: flex; align-items: center; justify-content: center;
-  padding: 0 8px; color: var(--border); font-size: 22px; flex-shrink: 0;
-}
-
-/* ── CHARTS SECTION ───────────────────────────────────────────── */
-.chart-section {
-  display: grid;
-  grid-template-columns: 1fr 220px;
-  gap: 14px;
-  align-items: start;
-}
-.chart-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 14px;
-}
-.chart-title { font-weight: 600; font-size: 13px; }
-.legend { display: flex; gap: 14px; }
-.leg-item { display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--sub); }
-.leg-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
-
-/* MONTHLY PANEL */
-.monthly {
-  background: var(--s1);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 16px;
-}
-.monthly-head { font-size: 10.5px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 600; margin-bottom: 14px; }
-.monthly-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.monthly-name { font-size: 12.5px; color: var(--sub); }
-.monthly-val {
-  font-family: 'Sora', sans-serif;
-  font-size: 26px; font-weight: 800; line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-.monthly-hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
-.monthly-total { display: flex; align-items: center; justify-content: space-between; }
-.monthly-total-lbl { font-size: 11px; color: var(--muted); }
-.monthly-total-val {
-  font-family: 'Sora', sans-serif;
-  font-size: 20px; font-weight: 700; color: var(--gold);
-  font-variant-numeric: tabular-nums;
-}
-.monthly-note {
-  margin-top: 12px;
-  background: var(--gold-lo);
-  border: 1px solid rgba(240,192,64,.2);
-  border-radius: var(--r-sm);
-  padding: 9px 10px;
-  font-size: 11px; color: var(--sub); line-height: 1.4;
-}
-
-/* ── FOOTER ───────────────────────────────────────────────────── */
-.footer {
-  margin-top: 48px;
-  border-top: 1px solid var(--border);
-  padding-top: 16px;
-  display: flex; justify-content: space-between; align-items: flex-end;
-  gap: 24px;
-}
-.footer-left { font-size: 11.5px; color: var(--muted); line-height: 1.7; }
-.footer-right { font-size: 11px; color: var(--muted); text-align: right; flex-shrink: 0; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans-serif;font-size:14px;line-height:1.5}
+canvas{display:block}
+.hd{background:var(--s1);border-bottom:1px solid var(--border);padding:20px 32px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.hd-left{display:flex;align-items:center;gap:14px}
+.hd-logo{width:40px;height:40px;background:linear-gradient(135deg,var(--steph),#6ea8e8);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:800;font-size:17px;color:#fff;flex-shrink:0}
+.hd-title{font-family:'Sora',sans-serif;font-weight:700;font-size:17px;letter-spacing:-0.2px}
+.hd-title span{color:var(--steph)}
+.hd-sub{color:var(--sub);font-size:12.5px;margin-top:1px}
+.hd-right{text-align:right}
+.hd-period{font-family:'Sora',sans-serif;font-weight:600;font-size:13px}
+.hd-gen{color:var(--muted);font-size:11.5px;margin-top:2px}
+.page{max-width:1180px;margin:0 auto;padding:28px 24px 56px}
+.sec-head{display:flex;align-items:center;gap:10px;margin:32px 0 14px}
+.sec-num{font-family:'Sora',sans-serif;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase}
+.sec-title{font-family:'Sora',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--sub)}
+.sec-rule{flex:1;height:1px;background:var(--border)}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:20px}
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px}
+.person-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.person-bar{height:4px}
+.person-bar.s{background:linear-gradient(90deg,var(--steph),#6ea8e8)}
+.person-bar.l{background:linear-gradient(90deg,var(--luis),#64debb)}
+.person-body{padding:16px 18px 18px}
+.person-name{font-family:'Sora',sans-serif;font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.person-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kpi-tile{background:var(--s2);border-radius:var(--r-sm);padding:12px 10px;text-align:center}
+.kpi-n{font-family:'Sora',sans-serif;font-size:32px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.kpi-lbl{font-size:10.5px;color:var(--muted);margin-top:5px;line-height:1.3}
+.hbar-wrap{padding:4px 0}
+.hbar-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.hbar-row:last-child{margin-bottom:0}
+.hbar-label{width:80px;text-align:right;font-size:12.5px;color:var(--sub);flex-shrink:0}
+.hbar-track{flex:1;background:var(--s2);border-radius:5px;height:30px;overflow:hidden;position:relative}
+.hbar-fill{height:100%;border-radius:5px;display:flex;align-items:center;padding:0 10px;font-family:'Sora',sans-serif;font-weight:700;font-size:13px;min-width:42px}
+.hbar-fill.s{background:linear-gradient(90deg,rgba(74,144,217,.55),rgba(74,144,217,.25));color:var(--steph)}
+.hbar-fill.l{background:linear-gradient(90deg,rgba(46,204,154,.55),rgba(46,204,154,.25));color:var(--luis)}
+.hbar-fill.tot{background:linear-gradient(90deg,rgba(240,192,64,.4),rgba(240,192,64,.15));color:var(--gold)}
+/* ââ FUNIL VISUAL âââââââââââââââââââââââââââââââââââââââââââ */
+.fv-wrap{display:flex;align-items:flex-end;gap:0;height:120px;padding-bottom:24px;position:relative}
+.fv-stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;position:relative}
+.fv-bar{width:100%;border-radius:4px 4px 0 0;transition:height .3s}
+.fv-count{font-family:'Sora',sans-serif;font-size:13px;font-weight:800;line-height:1;margin-bottom:5px;font-variant-numeric:tabular-nums}
+.fv-lbl{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap;font-weight:600}
+.fv-arrow{width:36px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:24px;gap:2px;flex-shrink:0}
+.fv-pct{font-family:'Sora',sans-serif;font-size:10px;font-weight:700;white-space:nowrap}
+.fv-chevron{font-size:16px;color:var(--border);line-height:1}
+/* ââ CHARTS âââââââââââââââââââââââââââââââââââââââââââââââ */
+.chart-section{display:grid;grid-template-columns:1fr 220px;gap:14px;align-items:start}
+.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.chart-title{font-weight:600;font-size:13px}
+.legend{display:flex;gap:14px}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--sub)}
+.leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.monthly{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+.monthly-head{font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:600;margin-bottom:14px}
+.monthly-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.monthly-name{font-size:12.5px;color:var(--sub)}
+.monthly-val{font-family:'Sora',sans-serif;font-size:26px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.monthly-hr{border:none;border-top:1px solid var(--border);margin:12px 0}
+.monthly-total{display:flex;align-items:center;justify-content:space-between}
+.monthly-total-lbl{font-size:11px;color:var(--muted)}
+.monthly-total-val{font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:var(--gold);font-variant-numeric:tabular-nums}
+.footer{margin-top:48px;border-top:1px solid var(--border);padding-top:16px;display:flex;justify-content:space-between;align-items:flex-end;gap:24px}
+.footer-left{font-size:11.5px;color:var(--muted);line-height:1.7}
+.footer-right{font-size:11px;color:var(--muted);text-align:right;flex-shrink:0}
 </style>
 
 <!-- HEADER -->
@@ -283,20 +106,20 @@ canvas { display: block; }
     <div class="hd-logo">L</div>
     <div>
       <div class="hd-title">Painel Comercial <span>Lughy</span></div>
-      <div class="hd-sub">Time comercial · Stephanie &amp; Luis</div>
+      <div class="hd-sub">Time comercial Â· Stephanie &amp; Luis</div>
     </div>
   </div>
   <div class="hd-right">
-    <div class="hd-period">Semana 31/08 – 06/09/2026</div>
-    <div class="hd-gen">Gerado em 08/09/2026 · Mês atual: 01–08/09</div>
+    <div class="hd-period">Semana 31/08 â 06/09/2026</div>
+    <div class="hd-gen">Gerado em 08/09/2026 Â· MÃªs atual: 01â08/09</div>
   </div>
 </div>
 
 <div class="page">
 
-  <!-- KPI CARDS -->
+  <!-- KPI CARDS â Semana passada -->
   <div class="sec-head" style="margin-top:0">
-    <span class="sec-num">Semana passada</span>
+    <span class="sec-num">Semana passada Â· 31/08 â 06/09</span>
     <span class="sec-rule"></span>
   </div>
   <div class="kpi-grid">
@@ -304,25 +127,20 @@ canvas { display: block; }
       <div class="person-bar s"></div>
       <div class="person-body">
         <div class="person-name">
-          <div class="person-dot" style="background:var(--steph)"></div>
-          Stephanie
+          <div class="person-dot" style="background:var(--steph)"></div>Stephanie
         </div>
         <div class="kpi-row">
           <div class="kpi-tile">
             <div class="kpi-n" style="color:var(--steph)">1</div>
-            <div class="kpi-lbl">Ligações na semana</div>
+            <div class="kpi-lbl">LigaÃ§Ãµes</div>
           </div>
           <div class="kpi-tile">
             <div class="kpi-n" style="color:var(--steph)">1</div>
-            <div class="kpi-lbl">Reuniões na semana</div>
+            <div class="kpi-lbl">ReuniÃµes</div>
           </div>
           <div class="kpi-tile">
-            <div class="kpi-n" style="color:var(--steph)">129</div>
-            <div class="kpi-lbl">Atividades concluídas</div>
-          </div>
-          <div class="kpi-tile">
-            <div class="kpi-n" style="color:var(--danger)">3</div>
-            <div class="kpi-lbl">Atividades atrasadas</div>
+            <div class="kpi-n" style="color:var(--steph)">124</div>
+            <div class="kpi-lbl">Atividades concluÃ­das</div>
           </div>
         </div>
       </div>
@@ -331,147 +149,132 @@ canvas { display: block; }
       <div class="person-bar l"></div>
       <div class="person-body">
         <div class="person-name">
-          <div class="person-dot" style="background:var(--luis)"></div>
-          Luis
+          <div class="person-dot" style="background:var(--luis)"></div>Luis
         </div>
         <div class="kpi-row">
           <div class="kpi-tile">
             <div class="kpi-n" style="color:var(--luis)">2</div>
-            <div class="kpi-lbl">Ligações na semana</div>
+            <div class="kpi-lbl">LigaÃ§Ãµes</div>
           </div>
           <div class="kpi-tile">
-            <div class="kpi-n" style="color:var(--luis)">5</div>
-            <div class="kpi-lbl">Reuniões na semana</div>
+            <div class="kpi-n" style="color:var(--luis)">6</div>
+            <div class="kpi-lbl">ReuniÃµes</div>
           </div>
           <div class="kpi-tile">
-            <div class="kpi-n" style="color:var(--luis)">112</div>
-            <div class="kpi-lbl">Atividades concluídas</div>
-          </div>
-          <div class="kpi-tile">
-            <div class="kpi-n" style="color:var(--danger)">4</div>
-            <div class="kpi-lbl">Atividades atrasadas</div>
+            <div class="kpi-n" style="color:var(--luis)">103</div>
+            <div class="kpi-lbl">Atividades concluÃ­das</div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- SECTION 1: ATRASADAS -->
+  <!-- SECTION 01: FUNIL DE CONVERSÃO por vendedor -->
   <div class="sec-head">
     <span class="sec-num">01</span>
-    <span class="sec-title">Atividades Atrasadas</span>
+    <span class="sec-title">Funil de ConversÃ£o â Proposta â Ganho Â· 2026</span>
     <span class="sec-rule"></span>
   </div>
-  <div class="card" style="padding: 20px 24px;">
-    <div class="hbar-wrap">
-      <div class="hbar-row">
-        <div class="hbar-label">Stephanie</div>
-        <div class="hbar-track">
-          <div class="hbar-fill s" style="width: 42.9%">3</div>
-        </div>
-      </div>
-      <div class="hbar-row">
-        <div class="hbar-label">Luis</div>
-        <div class="hbar-track">
-          <div class="hbar-fill l" style="width: 57.1%">4</div>
-        </div>
-      </div>
-      <div class="hbar-row" style="margin-top:4px">
-        <div class="hbar-label" style="color:var(--gold); font-weight:600">Total</div>
-        <div class="hbar-track">
-          <div class="hbar-fill tot" style="width: 100%">7</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SECTION 2: FUNIL -->
-  <div class="sec-head">
-    <span class="sec-num">02</span>
-    <span class="sec-title">Funil de Conversão — Este ano (2026)</span>
-    <span class="sec-rule"></span>
-  </div>
-  <div class="funnel-wrap">
-    <div class="funnel-stage" style="border-top: 3px solid var(--steph)">
-      <div class="funnel-stage-icon">🔍</div>
-      <div class="funnel-stage-lbl">Refinamento</div>
-      <div class="funnel-total">115</div>
-      <div class="funnel-note" style="margin-top:16px">Deals que entraram no estágio · 2026</div>
-    </div>
-    <div class="funnel-arrow" style="flex-direction:column; gap:4px">
-      <div style="font-size:13px; font-weight:700; color:var(--steph); font-family:'Sora',sans-serif; white-space:nowrap">77%</div>
-      <div style="font-size:22px; color:var(--border)">›</div>
-    </div>
-    <div class="funnel-stage" style="border-top: 3px solid #9b73d9">
-      <div class="funnel-stage-icon">📋</div>
-      <div class="funnel-stage-lbl">Proposta</div>
-      <div class="funnel-total">89</div>
-      <div class="funnel-note" style="margin-top:16px">Deals que chegaram à proposta · 2026</div>
-    </div>
-    <div class="funnel-arrow" style="flex-direction:column; gap:4px">
-      <div style="font-size:13px; font-weight:700; color:#9b73d9; font-family:'Sora',sans-serif; white-space:nowrap">16%</div>
-      <div style="font-size:22px; color:var(--border)">›</div>
-    </div>
-    <div class="funnel-stage" style="border-top: 3px solid var(--luis)">
-      <div class="funnel-stage-icon">🏆</div>
-      <div class="funnel-stage-lbl">Ganho (Won)</div>
-      <div class="funnel-total" style="color:var(--luis)">14</div>
-      <div class="funnel-note" style="margin-top:16px">Deals ganhos · pipeline Vendas–Lughy · 2026</div>
-    </div>
-  </div>
-
-  <!-- TAXA DE CONVERSÃO POR VENDEDOR -->
-  <div class="card" style="margin-top:14px; padding:20px 24px;">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px">
-      <div>
-        <div style="font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); font-weight:600">Taxa de Conversão · Proposta → Ganho</div>
-        <div style="font-size:11px; color:var(--muted); margin-top:3px">criado em 2026 · pipeline 5 · metodologia Pipedrive Insights</div>
-      </div>
-      <div style="display:flex; align-items:center; gap:6px; flex-shrink:0">
-        <div style="width:18px; height:2px; background:var(--gold); border-radius:1px"></div>
-        <span style="font-size:11px; color:var(--gold); font-weight:600">Meta 20%</span>
-      </div>
-    </div>
+  <div style="font-size:11px;color:var(--muted);margin-bottom:12px">Pipeline VendasâLughy Â· apenas 2026 Â· fonte: Pipedrive Insights via navegador Â· meta de conversÃ£o: 20%</div>
+  <div class="kpi-grid">
 
     <!-- Stephanie -->
-    <div style="margin-bottom:16px">
-      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px">
-        <div style="display:flex; align-items:center; gap:8px">
-          <div style="width:8px; height:8px; border-radius:50%; background:var(--steph)"></div>
-          <span style="font-size:13px; color:var(--sub)">Stephanie</span>
+    <div class="person-card">
+      <div class="person-bar s"></div>
+      <div class="person-body">
+        <div class="person-name">
+          <div class="person-dot" style="background:var(--steph)"></div>Stephanie
+          <span style="margin-left:auto;font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:var(--muted)" id="s-conv-pct">â</span>
+          <span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:4px">PropâGanho</span>
         </div>
-        <span style="font-family:'Sora',sans-serif; font-size:22px; font-weight:800; color:var(--steph)">16%</span>
-      </div>
-      <div style="position:relative; background:var(--s2); border-radius:6px; height:22px; overflow:hidden">
-        <div style="position:absolute; left:66.7%; top:0; bottom:0; width:2px; background:var(--gold); opacity:.85; z-index:2"></div>
-        <div style="width:53.3%; background:linear-gradient(90deg,rgba(74,144,217,.85),rgba(74,144,217,.35)); height:100%; border-radius:6px">
+        <!-- Funil visual -->
+        <div class="fv-wrap" id="s-funnel">
+          <div class="fv-stage">
+            <div class="fv-count" style="color:var(--gold)" id="s-ref-n" data-val="49">â</div>
+            <div class="fv-bar" id="s-ref-bar" style="height:100%;background:linear-gradient(180deg,rgba(240,192,64,.7),rgba(240,192,64,.35))"></div>
+            <div class="fv-lbl">Refinamento</div>
+          </div>
+          <div class="fv-arrow">
+            <div class="fv-pct" style="color:var(--muted)" id="s-pct1">â</div>
+            <div class="fv-chevron">âº</div>
+          </div>
+          <div class="fv-stage">
+            <div class="fv-count" style="color:var(--gold)" id="s-prop-n" data-val="37">â</div>
+            <div class="fv-bar" id="s-prop-bar" style="height:80%;background:linear-gradient(180deg,rgba(240,192,64,.7),rgba(240,192,64,.35))"></div>
+     0      <div class="fv-lbl">Proposta</div>
+          </div>
+          <div class="fv-arrow">
+            <div class="fv-pct" style="color:var(--steph);font-size:12px;font-weight:800" id="s-pct2">â</div>
+            <div class="fv-chevron">âº</div>
+          </div>
+          <div class="fv-stage">
+            <div class="fv-count" style="color:var(--luis)" id="s-ganho-n" data-val="6">â</div>
+            <div class="fv-bar" id="s-ganho-bar" style="height:15%;background:var(--luis)"></div>
+            <div class="fv-lbl">Ganho</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;background:var(--gold-lo);border:1px solid rgba(240,192,64,.2);border-radius:var(--r-sm);padding:8px 12px;font-size:11px;color:var(--sub);display:flex;align-items:center;justify-content:space-between">
+          <span>Meta 20%</span>
+          <div style="width:120px;background:var(--s2);border-radius:4px;height:8px;overflow:hidden;position:relative">
+            <div style="position:absolute;left:66.7%;top:0;bottom:0;width:1.5px;background:var(--gold)"></div>
+            <div id="s-meta-bar" style="height:100%;background:linear-gradient(90deg,rgba(74,144,217,.8),rgba(74,144,217,.3));border-radius:4px;width:0%"></div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Luis -->
-    <div>
-      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px">
-        <div style="display:flex; align-items:center; gap:8px">
-          <div style="width:8px; height:8px; border-radius:50%; background:var(--luis)"></div>
-          <span style="font-size:13px; color:var(--sub)">Luis</span>
+    <div class="person-card">
+      <div class="person-bar l"></div>
+      <div class="person-body">
+        <div class="person-name">
+          <div class="person-dot" style="background:var(--luis)"></div>Luis
+          <span style="margin-left:auto;font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:var(--muted)" id="l-conv-pct">â</span>
+          <span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:4px">PropâGanho</span>
         </div>
-        <span style="font-family:'Sora',sans-serif; font-size:22px; font-weight:800; color:var(--luis)">13%</span>
-      </div>
-      <div style="position:relative; background:var(--s2); border-radius:6px; height:22px; overflow:hidden">
-        <div style="position:absolute; left:66.7%; top:0; bottom:0; width:2px; background:var(--gold); opacity:.85; z-index:2"></div>
-        <div style="width:43.3%; background:linear-gradient(90deg,rgba(46,204,154,.85),rgba(46,204,154,.35)); height:100%; border-radius:6px">
+        <!-- Funil visual -->
+        <div class="fv-wrap" id="l-funnel">
+          <div class="fv-stage">
+            <div class="fv-count" style="color:var(--gold)" id="l-ref-n" data-val="51">â</div>
+            <div class="fv-bar" id="l-ref-bar" style="height:100%;background:linear-gradient(180deg,rgba(240,192,64,.7),rgba(240,192,64,.35))"></div>
+            <div class="fv-lbl">Refinamento</div>
+          </div>
+          <div class="fv-arrow">
+            <div class="fv-pct" style="color:var(--muted)" id="l-pct1">â</div>
+            <div class="fv-chevron">âº</div>
+          </div>
+          <div class="fv-stage">
+            <div class="fv-count" style="color:var(--gold)" id="l-prop-n" data-val="40">â</div>
+            <div class="fv-bar" id="l-prop-bar" style="height:80%;background:linear-gradient(180deg,rgba(240,192,64,.7),rgba(240,192,64,.35))"></div>
+            <div class="fv-lbl">Proposta</div>
+          </div>
+          <div class="fv-arrow">
+            <div class="fv-pct" style="color:var(--luis);font-size:12px;font-weight:800" id="l-pct2">â</div>
+            <div class="fv-chevron">âº</div>
+          </div>
+          <div class="fv-stage">
+            <div class="fv-count" style="color:var(--luis)" id="l-ganho-n" data-val="5">â</div>
+            <div class="fv-bar" id="l-ganho-bar" style="height:15%;background:var(--luis)"></div>
+            <div class="fv-lbl">Ganho</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;background:var(--gold-lo);border:1px solid rgba(240,192,64,.2);border-radius:var(--r-sm);padding:8px 12px;font-size:11px;color:var(--sub);display:flex;align-items:center;justify-content:space-between">
+          <span>Meta 20%</span>
+          <div style="width:120px;background:var(--s2);border-radius:4px;height:8px;overflow:hidden;position:relative">
+            <div style="position:absolute;left:66.7%;top:0;bottom:0;width:1.5px;background:var(--gold)"></div>
+            <div id="l-meta-bar" style="height:100%;background:linear-gradient(90deg,rgba(46,204,154,.8),rgba(46,204,154,.3));border-radius:4px;width:0%"></div>
+          </div>
         </div>
       </div>
     </div>
 
-    <div style="margin-top:12px; font-size:11px; color:var(--muted)">Escala: 0–30% · Linha dourada = meta 20% · Fonte: Pipedrive Insights · criado em 2026 · pipeline Vendas–Lughy</div>
   </div>
+  <div style="margin-top:8px;font-size:11px;color:var(--muted)">Dados indisponÃ­veis nesta execuÃ§Ã£o â Chrome nÃ£o acessÃ­vel. SerÃ£o preenchidos na prÃ³xima atualizaÃ§Ã£o automÃ¡tica.</div>
 
-  <!-- SECTION 2b: COMISSÃO TRIMESTRAL -->
+  <!-- SECTION 02: COMISSÃO TRIMESTRAL -->
   <div class="sec-head">
-    <span class="sec-num">02B</span>
-    <span class="sec-title">Comissão Trimestral — Q3/2026 · Jul–Set</span>
+    <span class="sec-num">02</span>
+    <span class="sec-title">ComissÃ£o Trimestral â Q3/2026 Â· JulâSet</span>
     <span class="sec-rule"></span>
   </div>
   <div class="kpi-grid">
@@ -481,47 +284,57 @@ canvas { display: block; }
       <div class="person-bar s"></div>
       <div class="person-body">
         <div class="person-name">
-          <div class="person-dot" style="background:var(--steph)"></div>
-          Stephanie
+          <div class="person-dot" style="background:var(--steph)"></div>Stephanie
         </div>
-        <div class="kpi-row" style="grid-template-columns:repeat(3,1fr); margin-bottom:18px">
+        <div class="kpi-row" style="margin-bottom:18px">
           <div class="kpi-tile">
-            <div class="kpi-n" style="color:var(--steph)">3</div>
+            <div class="kpi-n" style="color:var(--steph)">4</div>
             <div class="kpi-lbl">Ganhos Q3</div>
           </div>
           <div class="kpi-tile">
-            <div class="kpi-n" style="color:var(--steph); font-size:22px">R$356k</div>
+            <div class="kpi-n" style="color:var(--steph);font-size:22px">R$356k</div>
             <div class="kpi-lbl">Valor total</div>
           </div>
           <div class="kpi-tile">
-            <div class="kpi-n" style="color:var(--gold); font-size:22px">R$1.500</div>
-            <div class="kpi-lbl">Comissão</div>
+            <div class="kpi-n" style="color:var(--gold);font-size:22px">R$1.500</div>
+            <div class="kpi-lbl">ComissÃ£o</div>
           </div>
         </div>
-        <div style="font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); font-weight:600; margin-bottom:8px">Breakdown por deal</div>
-        <div style="display:flex; flex-direction:column; gap:6px">
-          <div style="display:flex; align-items:center; justify-content:space-between; background:var(--s2); border-radius:var(--r-sm); padding:8px 12px">
-            <span style="font-size:12.5px; color:var(--sub)">A.J.RORATO</span>
-            <div style="display:flex; align-items:center; gap:10px">
-              <span style="font-size:10.5px; background:var(--s3); border-radius:4px; padding:2px 7px; color:var(--muted)">Porte C</span>
-              <span style="font-size:11.5px; color:var(--muted)">R$58k</span>
-              <span style="font-family:'Sora',sans-serif; font-size:13px; font-weight:700; color:var(--gold)">+R$300</span>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:600;margin-bottom:8px">Breakdown por deal</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--s2);border-radius:var(--r-sm);padding:8px 12px">
+            <span style="font-size:12.5px;color:var(--sub)">mykids (InscriÃ§Ã£o Eventos)</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:11px;color:var(--muted)">16/jul</span>
+              <span style="font-size:10.5px;background:var(--s3);border-radius:4px;padding:2px 7px;color:var(--muted)">R$0</span>
+              <span style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--muted)">â</span>
             </div>
           </div>
-          <div style="display:flex; align-items:center; justify-content:space-between; background:var(--s2); border-radius:var(--r-sm); padding:8px 12px">
-            <span style="font-size:12.5px; color:var(--sub)">Keep-Desenvolvimento</span>
-            <div style="display:flex; align-items:center; gap:10px">
-              <span style="font-size:10.5px; background:var(--s3); border-radius:4px; padding:2px 7px; color:var(--muted)">Porte B</span>
-              <span style="font-size:11.5px; color:var(--muted)">R$148k</span>
-              <span style="font-family:'Sora',sans-serif; font-size:13px; font-weight:700; color:var(--gold)">+R$600</span>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--s2);border-radius:var(--r-sm);padding:8px 12px">
+            <span style="font-size:12.5px;color:var(--sub)">A.J. Rorato (Marcelo Utumi)</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:11px;color:var(--muted)">21/jul</span>
+              <span style="font-size:10.5px;background:var(--s3);border-radius:4px;padding:2px 7px;color:var(--muted)">Porte C</span>
+              <span style="font-size:11.5px;color:var(--muted)">R$58k</span>
+              <span style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">+R$300</span>
             </div>
           </div>
-          <div style="display:flex; align-items:center; justify-content:space-between; background:var(--s2); border-radius:var(--r-sm); padding:8px 12px">
-            <span style="font-size:12.5px; color:var(--sub)">Minhas Proteções</span>
-            <div style="display:flex; align-items:center; gap:10px">
-              <span style="font-size:10.5px; background:var(--s3); border-radius:4px; padding:2px 7px; color:var(--muted)">Porte B</span>
-              <span style="font-size:11.5px; color:var(--muted)">R$150k</span>
-              <span style="font-family:'Sora',sans-serif; font-size:13px; font-weight:700; color:var(--gold)">+R$600</span>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--s2);border-radius:var(--r-sm);padding:8px 12px">
+            <span style="font-size:12.5px;color:var(--sub)">Keep â Desenvolvimento</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:11px;color:var(--muted)">21/jul</span>
+              <span style="font-size:10.5px;background:var(--s3);border-radius:4px;padding:2px 7px;color:var(--muted)">Porte B</span>
+              <span style="font-size:11.5px;color:var(--muted)">R$148k</span>
+              <span style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">+R$600</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--s2);border-radius:var(--r-sm);padding:8px 12px">
+            <span style="font-size:12.5px;color:var(--sub)">Minhas ProteÃ§Ãµes</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:11px;color:var(--muted)">14/ago</span>
+              <span style="font-size:10.5px;background:var(--s3);border-radius:4px;padding:2px 7px;color:var(--muted)">Porte B</span>
+              <span style="font-size:11.5px;color:var(--muted)">R$150k</span>
+              <span style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">+R$600</span>
             </div>
           </div>
         </div>
@@ -533,90 +346,90 @@ canvas { display: block; }
       <div class="person-bar l"></div>
       <div class="person-body">
         <div class="person-name">
-          <div class="person-dot" style="background:var(--luis)"></div>
-          Luis
+          <div class="person-dot" style="background:var(--luis)"></div>Luis
         </div>
-        <div class="kpi-row" style="grid-template-columns:repeat(3,1fr); margin-bottom:18px">
+        <div class="kpi-row" style="margin-bottom:18px">
           <div class="kpi-tile">
             <div class="kpi-n" style="color:var(--luis)">1</div>
             <div class="kpi-lbl">Ganhos Q3</div>
           </div>
           <div class="kpi-tile">
-            <div class="kpi-n" style="color:var(--luis); font-size:22px">R$89k</div>
+            <div class="kpi-n" style="color:var(--luis);font-size:22px">R$89k</div>
             <div class="kpi-lbl">Valor total</div>
           </div>
           <div class="kpi-tile">
-            <div class="kpi-n" style="color:var(--gold); font-size:22px">R$300</div>
-            <div class="kpi-lbl">Comissão</div>
+            <div class="kpi-n" style="color:var(--gold);font-size:22px">R$300</div>
+            <div class="kpi-lbl">ComissÃ£o</div>
           </div>
         </div>
-        <div style="font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); font-weight:600; margin-bottom:8px">Breakdown por deal</div>
-        <div style="display:flex; flex-direction:column; gap:6px">
-          <div style="display:flex; align-items:center; justify-content:space-between; background:var(--s2); border-radius:var(--r-sm); padding:8px 12px">
-            <span style="font-size:12.5px; color:var(--sub)">Removi</span>
-            <div style="display:flex; align-items:center; gap:10px">
-              <span style="font-size:10.5px; background:var(--s3); border-radius:4px; padding:2px 7px; color:var(--muted)">Porte C</span>
-              <span style="font-size:11.5px; color:var(--muted)">R$89k</span>
-              <span style="font-family:'Sora',sans-serif; font-size:13px; font-weight:700; color:var(--gold)">+R$300</span>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:600;margin-bottom:8px">Breakdown por deal</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--s2);border-radius:var(--r-sm);padding:8px 12px">
+            <span style="font-size:12.5px;color:var(--sub)">Removi</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:11px;color:var(--muted)">03/set</span>
+              <span style="font-size:10.5px;background:var(--s3);border-radius:4px;padding:2px 7px;color:var(--muted)">Porte C</span>
+              <span style="font-size:11.5px;color:var(--muted)">R$89k</span>
+              <span style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">+R$300</span>
             </div>
           </div>
         </div>
-        <div style="margin-top:14px; background:var(--s2); border-radius:var(--r-sm); padding:12px 14px; font-size:11.5px; color:var(--muted); line-height:1.5">
-          Q3 em andamento — <strong style="color:var(--sub)">Set 2026</strong>. Novos fechamentos aumentam a comissão.
+        <div style="margin-top:14px;background:var(--s2);border-radius:var(--r-sm);padding:12px 14px;font-size:11.5px;color:var(--muted);line-height:1.5">
+          Q3 em andamento â <strong style="color:var(--sub)">Set 2026</strong>. Novos fechamentos aumentam a comissÃ£o.
         </div>
       </div>
     </div>
 
   </div>
 
-  <!-- Tabela de portes -->
-  <div class="card" style="margin-top:14px; padding:16px 24px;">
-    <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); font-weight:600; margin-bottom:12px">Tabela de portes · comissão por deal</div>
-    <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:8px">
-      <div style="background:var(--s2); border-radius:var(--r-sm); padding:10px; text-align:center">
-        <div style="font-family:'Sora',sans-serif; font-size:14px; font-weight:700; color:var(--sub)">D</div>
-        <div style="font-size:10px; color:var(--muted); margin:3px 0">≥ R$1</div>
-        <div style="font-family:'Sora',sans-serif; font-size:13px; font-weight:700; color:var(--gold)">R$150</div>
+  <!-- Tabela de Portes -->
+  <div class="card" style="margin-top:14px;padding:16px 24px">
+    <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:600;margin-bottom:12px">Tabela de portes Â· comissÃ£o por deal</div>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px">
+      <div style="background:var(--s2);border-radius:var(--r-sm);padding:10px;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--sub)">D</div>
+        <div style="font-size:10px;color:var(--muted);margin:3px 0">â¥ R$1</div>
+        <div style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">R$150</div>
       </div>
-      <div style="background:var(--s2); border-radius:var(--r-sm); padding:10px; text-align:center">
-        <div style="font-family:'Sora',sans-serif; font-size:14px; font-weight:700; color:var(--sub)">C</div>
-        <div style="font-size:10px; color:var(--muted); margin:3px 0">≥ R$20k</div>
-        <div style="font-family:'Sora',sans-serif; font-size:13px; font-weight:700; color:var(--gold)">R$300</div>
+      <div style="background:var(--s2);border-radius:var(--r-sm);padding:10px;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--sub)">C</div>
+        <div style="font-size:10px;color:var(--muted);margin:3px 0">â¥ R$20k</div>
+        <div style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">R$300</div>
       </div>
-      <div style="background:var(--s2); border-radius:var(--r-sm); padding:10px; text-align:center">
-        <div style="font-family:'Sora',sans-serif; font-size:14px; font-weight:700; color:var(--sub)">B</div>
-        <div style="font-size:10px; color:var(--muted); margin:3px 0">≥ R$90k</div>
-        <div style="font-family:'Sora',sans-serif; font-size:13px; font-weight:700; color:var(--gold)">R$600</div>
+      <div style="background:var(--s2);border-radius:var(--r-sm);padding:10px;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--sub)">B</div>
+        <div style="font-size:10px;color:var(--muted);margin:3px 0">â¥ R$90k</div>
+        <div style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">R$600</div>
       </div>
-      <div style="background:var(--s2); border-radius:var(--r-sm); padding:10px; text-align:center">
-        <div style="font-family:'Sora',sans-serif; font-size:14px; font-weight:700; color:var(--sub)">A-</div>
-        <div style="font-size:10px; color:var(--muted); margin:3px 0">≥ R$180k</div>
-        <div style="font-family:'Sora',sans-serif; font-size:13px; font-weight:700; color:var(--gold)">R$1.000</div>
+      <div style="background:var(--s2);border-radius:var(--r-sm);padding:10px;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--sub)">A-</div>
+        <div style="font-size:10px;color:var(--muted);margin:3px 0">â¥ R$180k</div>
+        <div style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">R$1.000</div>
       </div>
-      <div style="background:var(--s2); border-radius:var(--r-sm); padding:10px; text-align:center">
-        <div style="font-family:'Sora',sans-serif; font-size:14px; font-weight:700; color:var(--sub)">A+</div>
-        <div style="font-size:10px; color:var(--muted); margin:3px 0">≥ R$350k</div>
-        <div style="font-family:'Sora',sans-serif; font-size:13px; font-weight:700; color:var(--gold)">R$2.000</div>
+      <div style="background:var(--s2);border-radius:var(--r-sm);padding:10px;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--sub)">A+</div>
+        <div style="font-size:10px;color:var(--muted);margin:3px 0">â¥ R$350k</div>
+        <div style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">R$2.000</div>
       </div>
-      <div style="background:var(--s2); border-radius:var(--r-sm); padding:10px; text-align:center">
-        <div style="font-family:'Sora',sans-serif; font-size:14px; font-weight:700; color:var(--gold)">Top</div>
-        <div style="font-size:10px; color:var(--muted); margin:3px 0">≥ R$500k</div>
-        <div style="font-family:'Sora',sans-serif; font-size:13px; font-weight:700; color:var(--gold)">R$3.000</div>
+      <div style="background:var(--s2);border-radius:var(--r-sm);padding:10px;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--gold)">Top</div>
+        <div style="font-size:10px;color:var(--muted);margin:3px 0">â¥ R$500k</div>
+        <div style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">R$3.000</div>
       </div>
     </div>
-    <div style="margin-top:10px; font-size:11px; color:var(--muted)">Fonte: Pipedrive API · filtro por local_won_date · Q3/2026 = 01/07–30/09 · apenas pipeline 5 (Vendas–Lughy) · deals com valor R$0 não contabilizados</div>
+    <div style="margin-top:10px;font-size:11px;color:var(--muted)">Deals com valor R$0 nÃ£o contabilizados Â· filtro Q3/2026 = 01/07â30/09 Â· pipeline VendasâLughy</div>
   </div>
 
-  <!-- SECTION 3: LIGAÇÕES -->
+  <!-- SECTION 03: LIGAÃÃES -->
   <div class="sec-head">
     <span class="sec-num">03</span>
-    <span class="sec-title">Ligações</span>
+    <span class="sec-title">LigaÃ§Ãµes</span>
     <span class="sec-rule"></span>
   </div>
   <div class="chart-section">
     <div class="card">
       <div class="chart-header">
-        <span class="chart-title">Por dia — semana passada</span>
+        <span class="chart-title">Por dia â semana passada</span>
         <div class="legend">
           <div class="leg-item"><div class="leg-dot" style="background:var(--steph)"></div> Stephanie</div>
           <div class="leg-item"><div class="leg-dot" style="background:var(--luis)"></div> Luis</div>
@@ -625,7 +438,7 @@ canvas { display: block; }
       <canvas id="cLig" height="160"></canvas>
     </div>
     <div class="monthly">
-      <div class="monthly-head">Mês atual — Set 1–8</div>
+      <div class="monthly-head">MÃªs atual Â· Set 1â8</div>
       <div class="monthly-row">
         <span class="monthly-name">Stephanie</span>
         <span class="monthly-val" style="color:var(--steph)">1</span>
@@ -636,22 +449,22 @@ canvas { display: block; }
       </div>
       <hr class="monthly-hr">
       <div class="monthly-total">
-        <span class="monthly-total-lbl">Total mês</span>
+        <span class="monthly-total-lbl">Total mÃªs</span>
         <span class="monthly-total-val">3</span>
       </div>
     </div>
   </div>
 
-  <!-- SECTION 4: ATIVIDADES CONCLUÍDAS -->
+  <!-- SECTION 04: ATIVIDADES CONCLUÃDAS -->
   <div class="sec-head">
     <span class="sec-num">04</span>
-    <span class="sec-title">Atividades Concluídas</span>
+    <span class="sec-title">Atividades ConcluÃ­das</span>
     <span class="sec-rule"></span>
   </div>
   <div class="chart-section">
     <div class="card">
       <div class="chart-header">
-        <span class="chart-title">Por dia — semana passada</span>
+        <span class="chart-title">Por dia â semana passada</span>
         <div class="legend">
           <div class="leg-item"><div class="leg-dot" style="background:var(--steph)"></div> Stephanie</div>
           <div class="leg-item"><div class="leg-dot" style="background:var(--luis)"></div> Luis</div>
@@ -660,33 +473,33 @@ canvas { display: block; }
       <canvas id="cAtiv" height="160"></canvas>
     </div>
     <div class="monthly">
-      <div class="monthly-head">Mês atual — Set 1–8</div>
+      <div class="monthly-head">MÃªs atual Â· Set 1â8</div>
       <div class="monthly-row">
         <span class="monthly-name">Stephanie</span>
-        <span class="monthly-val" style="color:var(--steph)">100</span>
+        <span class="monthly-val" style="color:var(--steph)">105</span>
       </div>
       <div class="monthly-row">
         <span class="monthly-name">Luis</span>
-        <span class="monthly-val" style="color:var(--luis)">106</span>
+        <span class="monthly-val" style="color:var(--luis)">102</span>
       </div>
       <hr class="monthly-hr">
       <div class="monthly-total">
-        <span class="monthly-total-lbl">Total mês</span>
-        <span class="monthly-total-val">206</span>
+        <span class="monthly-total-lbl">Total mÃªs</span>
+        <span class="monthly-total-val">207</span>
       </div>
     </div>
   </div>
 
-  <!-- SECTION 5: REUNIÕES -->
+  <!-- SECTION 05: REUNIÃES -->
   <div class="sec-head">
     <span class="sec-num">05</span>
-    <span class="sec-title">Reuniões</span>
+    <span class="sec-title">ReuniÃµes</span>
     <span class="sec-rule"></span>
   </div>
   <div class="chart-section">
     <div class="card">
       <div class="chart-header">
-        <span class="chart-title">Por dia — semana passada</span>
+        <span class="chart-title">Por dia â semana passada</span>
         <div class="legend">
           <div class="leg-item"><div class="leg-dot" style="background:var(--steph)"></div> Stephanie</div>
           <div class="leg-item"><div class="leg-dot" style="background:var(--luis)"></div> Luis</div>
@@ -695,19 +508,19 @@ canvas { display: block; }
       <canvas id="cReu" height="160"></canvas>
     </div>
     <div class="monthly">
-      <div class="monthly-head">Mês atual — Set 1–8</div>
+      <div class="monthly-head">MÃªs atual Â· Set 1â8</div>
       <div class="monthly-row">
         <span class="monthly-name">Stephanie</span>
         <span class="monthly-val" style="color:var(--steph)">1</span>
       </div>
       <div class="monthly-row">
         <span class="monthly-name">Luis</span>
-        <span class="monthly-val" style="color:var(--luis)">4</span>
+        <span class="monthly-val" style="color:var(--luis)">3</span>
       </div>
       <hr class="monthly-hr">
       <div class="monthly-total">
-        <span class="monthly-total-lbl">Total mês</span>
-        <span class="monthly-total-val">5</span>
+        <span class="monthly-total-lbl">Total mÃªs</span>
+        <span class="monthly-total-val">4</span>
       </div>
     </div>
   </div>
@@ -715,11 +528,12 @@ canvas { display: block; }
   <!-- FOOTER -->
   <div class="footer">
     <div class="footer-left">
-      <div>Ligações = tipo <em>Ligação</em> · Reuniões = <em>Reunião</em> + <em>Reunião Pré-Venda</em> + <em>Reunião de Apresentação de Proposta</em></div>
-      <div>Funil: deals que fluíram por cada estágio em 2026 · Percentuais de conversão entre etapas (Pipedrive Insights, filtro Este ano) · pipeline Vendas–Lughy</div>
-      <div>Datas filtradas por <em>marked_as_done_time</em> em BRT (America/Sao_Paulo)</div>
+      <div>LigaÃ§Ãµes = tipo <em>LigaÃ§Ã£o</em> Â· ReuniÃµes = <em>ReuniÃ£o</em> + <em>ReuniÃ£o PrÃ©-Venda</em> + <em>ReuniÃ£o de ApresentaÃ§Ã£o de Proposta</em></div>
+      <div>Funil de conversÃ£o: Pipedrive Insights Â· pipeline VendasâLughy Â· 2026 Â· por vendedor via navegador</div>
+      <div>ComissÃ£o: Tabela de Portes Â· Q3/2026 = 01/07â30/09 Â· deals com valor R$0 excluÃ­dos</div>
+      <div>Atividades: done=true Â· semana 31/08â06/09 e mÃªs 01â08/09 Â· apenas Stephanie (ID 24155859) e Luis (ID 13236195)</div>
     </div>
-    <div class="footer-right">Dados via Pipedrive API · 08/09/2026<br>Lughy · Time Comercial</div>
+    <div class="footer-right">Dados via Pipedrive API Â· 08/09/2026<br>Lughy Â· Time Comercial</div>
   </div>
 
 </div>
@@ -733,92 +547,76 @@ canvas { display: block; }
   const BORDER = s.getPropertyValue('--border').trim() || '#252a45';
   const MUTED  = s.getPropertyValue('--muted').trim()  || '#5e658a';
 
-  const DAYS = ['Seg 31', 'Ter 01', 'Qua 02', 'Qui 03', 'Sex 04', 'Sáb 05', 'Dom 06'];
+  const DAYS = ['Seg 31','Ter 01','Qua 02','Qui 03','Sex 04','SÃ¡b 05','Dom 06'];
 
   const baseOpts = {
-    responsive: true,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        mode: 'index', intersect: false,
-        backgroundColor: '#1b2038',
-        titleColor: '#e6eaf5', bodyColor: '#9aa0c0',
-        borderColor: '#252a45', borderWidth: 1,
-        padding: 10
-      }
+    responsive:true,
+    plugins:{
+      legend:{display:false},
+      tooltip:{mode:'index',intersect:false,backgroundColor:'#1b2038',titleColor:'#e6eaf5',bodyColor:'#9aa0c0',borderColor:'#252a45',borderWidth:1,padding:10}
     },
-    scales: {
-      x: {
-        grid: { color: BORDER },
-        ticks: { color: MUTED, font: { family: 'DM Sans', size: 11 } }
-      },
-      y: {
-        beginAtZero: true,
-        grid: { color: BORDER },
-        ticks: { color: MUTED, font: { family: 'DM Sans', size: 11 }, stepSize: 1, precision: 0 }
-      }
+    scales:{
+      x:{grid:{color:BORDER},ticks:{color:MUTED,font:{family:'DM Sans',size:11}}},
+      y:{beginAtZero:true,grid:{color:BORDER},ticks:{color:MUTED,font:{family:'DM Sans',size:11},stepSize:1,precision:0}}
     }
   };
 
-  function makeDataset(label, data, color) {
-    return {
-      label, data,
-      backgroundColor: color + 'bb',
-      hoverBackgroundColor: color,
-      borderRadius: 4,
-      borderSkipped: false
-    };
+  function ds(label,data,color){
+    return{label,data,backgroundColor:color+'bb',hoverBackgroundColor:color,borderRadius:4,borderSkipped:false};
   }
 
-  // Chart 3 — Ligações
-  new Chart(document.getElementById('cLig'), {
-    type: 'bar',
-    data: {
-      labels: DAYS,
-      datasets: [
-        makeDataset('Stephanie', [0,0,0,0,1,0,0], STEPH),
-        makeDataset('Luis',      [0,0,0,1,1,0,0], LUIS)
-      ]
-    },
-    options: {
-      ...baseOpts,
-      scales: {
-        ...baseOpts.scales,
-        y: { ...baseOpts.scales.y, max: 5 }
-      }
-    }
+  new Chart(document.getElementById('cLig'),{
+    type:'bar',
+    data:{labels:DAYS,datasets:[
+      ds('Stephanie',[0,0,0,0,1,0,0],STEPH),
+      ds('Luis',     [0,0,0,1,1,0,0],LUIS)
+    ]},
+    options:{...baseOpts,scales:{...baseOpts.scales,y:{...baseOpts.scales.y,max:5}}}
   });
 
-  // Chart 4 — Atividades Concluídas
-  new Chart(document.getElementById('cAtiv'), {
-    type: 'bar',
-    data: {
-      labels: DAYS,
-      datasets: [
-        makeDataset('Stephanie', [29,23,24,20,33,0,0], STEPH),
-        makeDataset('Luis',      [6,40,12,31,23,0,0], LUIS)
-      ]
-    },
-    options: {
-      ...baseOpts,
-      scales: {
-        ...baseOpts.scales,
-        y: { ...baseOpts.scales.y, ticks: { ...baseOpts.scales.y.ticks, stepSize: 5 } }
-      }
-    }
+  new Chart(document.getElementById('cAtiv'),{
+    type:'bar',
+    data:{labels:DAYS,datasets:[
+      ds('Stephanie',[28,22,25,21,28,0,0],STEPH),
+      ds('Luis',     [12,31,13,25,22,0,0],LUIS)
+    ]},
+    options:{...baseOpts,scales:{...baseOpts.scales,y:{...baseOpts.scales.y,ticks:{...baseOpts.scales.y.ticks,stepSize:5}}}}
   });
 
-  // Chart 5 — Reuniões
-  new Chart(document.getElementById('cReu'), {
-    type: 'bar',
-    data: {
-      labels: DAYS,
-      datasets: [
-        makeDataset('Stephanie', [0,0,1,0,0,0,0], STEPH),
-        makeDataset('Luis',      [1,4,0,0,0,0,0], LUIS)
-      ]
-    },
-    options: baseOpts
+  new Chart(document.getElementById('cReu'),{
+    type:'bar',
+    data:{labels:DAYS,datasets:[
+      ds('Stephanie',[0,0,1,0,0,0,0],STEPH),
+      ds('Luis',     [3,2,0,1,0,0,0],LUIS)
+    ]},
+    options:baseOpts
   });
+
+  // Funil: preencher quando dados disponÃ­veis via data attributes no container
+  // Estrutura esperada no HTML gerado pelo agendamento:
+  // data-s-ref="92" data-s-prop="73" data-s-ganho="12"
+  // data-l-ref="45" data-l-prop="36" data-l-ganho="6"
+  function fillFunnel(prefix, color) {
+    const ref   = parseInt(document.getElementById(prefix+'-ref-n').dataset.val   || '0');
+    const prop  = parseInt(document.getElementById(prefix+'-prop-n').dataset.val  || '0');
+    const ganho = parseInt(document.getElementById(prefix+'-ganho-n').dataset.val || '0');
+    if (!ref) return;
+    const maxH = 76;
+    document.getElementById(prefix+'-ref-bar').style.height   = maxH + 'px';
+    document.getElementById(prefix+'-prop-bar').style.height  = Math.round(prop/ref*maxH) + 'px';
+    document.getElementById(prefix+'-ganho-bar').style.height = Math.max(5, Math.round(ganho/ref*maxH)) + 'px';
+    document.getElementById(prefix+'-ref-n').textContent   = ref;
+    document.getElementById(prefix+'-prop-n').textContent  = prop;
+    document.getElementById(prefix+'-ganho-n').textContent = ganho;
+    const pct1 = ref  ? Math.round(prop/ref*100)  : 0;
+    const pct2 = prop ? Math.round(ganho/prop*100) : 0;
+    document.getElementById(prefix+'-pct1').textContent = pct1 + '%';
+    document.getElementById(prefix+'-pct2').textContent = pct2 + '%';
+    document.getElementById(prefix+'-conv-pct').textContent = pct2 + '%';
+    document.getElementById(prefix+'-conv-pct').style.color = color;
+    document.getElementById(prefix+'-meta-bar').style.width = Math.min(100, pct2/20*100) + '%';
+  }
+  fillFunnel('s', STEPH);
+  fillFunnel('l', LUIS);
 })();
 </script>
