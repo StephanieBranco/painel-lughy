@@ -175,12 +175,14 @@ def fetch_won_deals_detail(user_id, start_date, end_date):
             if (d.get("pipeline_id") or d.get("pipeline", {}).get("id")) != pipeline_id:
                 continue
         value = d.get("value") or 0
+        if not value or value <= 0:
+            continue  # ignora deals sem valor (cópias, rascunhos, etc.)
         result.append({
             "title":      d.get("title") or "—",
             "value":      value,
             "won_date":   won,
-            "porte":      get_porte(value) if value > 0 else "R$0",
-            "commission": get_commission(value) if value > 0 else 0,
+            "porte":      get_porte(value),
+            "commission": get_commission(value),
         })
     result.sort(key=lambda x: x["won_date"])
     return result
@@ -887,8 +889,8 @@ def main():
         ref   = fp["refinamento"] if fp.get("refinamento") is not None else api_ref
         prop  = fp["proposta"]    if fp.get("proposta")    is not None else api_prop
         ganho = fp["ganho"]       if fp.get("ganho")       is not None else api_ganho
-        conv_rp = round(prop  / ref  * 100) if ref  > 0 else 0
-        conv_pg = round(ganho / prop * 100) if prop > 0 else 0
+        conv_rp = int(prop  / ref  * 100 + 0.5) if ref  > 0 else 0
+        conv_pg = int(ganho / prop * 100 + 0.5) if prop > 0 else 0
         return {"ref": ref, "prop": prop, "ganho": ganho,
                 "conv_rp": conv_rp, "conv_pg": conv_pg}
 
