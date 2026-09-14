@@ -2,9 +2,9 @@ name: Atualizar Painel Comercial Lughy
 
 on:
   schedule:
-    # Toda segunda-feira às 13h UTC = 10h BRT
+    # Toda segunda-feira às 12h UTC = 09h BRT
     # Roda 1 hora depois da tarefa agendada do Claude (12h UTC)
-    - cron: '0 13 * * 1'
+    - cron: '0 12 * * 1'
   workflow_dispatch:
     # Permite rodar manualmente pelo GitHub quando necessário
 
