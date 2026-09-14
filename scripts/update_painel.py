@@ -6,11 +6,11 @@ Executado pelo GitHub Actions toda segunda-feira.
 
 Configuração:
   - PIPEDRIVE_TOKEN: token de API do Pipedrive (GitHub Secret)
-  - COMMISSION_RATE: taxa de comissão (ajuste conforme necessidade)
 """
 
 import os
 import sys
+import json
 import requests
 from datetime import date, timedelta
 
@@ -22,8 +22,7 @@ if not API_TOKEN:
 
 BASE_URL = "https://api.pipedrive.com/v1"
 STEPHANIE_ID = 24155859
-LUIS_ID = 13236195
-COMMISSION_RATE = 0.005  # 0,5% — ajuste conforme a política de comissão real
+LUIS_ID      = 13236195
 
 VALID_TYPES = {
     "pesquisa", "task", "primeira_mensagem_linkedin", "call",
@@ -32,6 +31,16 @@ VALID_TYPES = {
     "reuniao_de_apresentacao_de", "follow_up", "no_show"
 }
 MEETING_TYPES = {"meeting", "reuniao_pre_venda_", "reuniao_de_apresentacao_de"}
+
+# Tabela de portes: (valor_mínimo, nome_porte, comissão)
+PORTE_TABLE = [
+    (500_000, "Top", 3000),
+    (350_000, "A+",  2000),
+    (180_000, "A-",  1000),
+    ( 90_000, "B",    600),
+    ( 20_000, "C",    300),
+    (      1, "D",    150),
+]
 
 
 # ─── HELPERS ─────────────────────────────────────────────────────
@@ -75,35 +84,80 @@ def q3_range():
     return date(year, 7, 1), date(year, 9, 30)
 
 
+def inicio_ano():
+    t = date.today()
+    return date(t.year, 1, 1)
+
+
+# ─── PORTE / COMISSÃO ────────────────────────────────────────────
+def get_porte(value):
+    for threshold, porte, _ in PORTE_TABLE:
+        if value >= threshold:
+            return porte
+    return "—"
+
+
+def get_commission(value):
+    for threshold, _, commission in PORTE_TABLE:
+        if value >= threshold:
+            return commission
+    return 0
+
+
 # ─── ATIVIDADES ──────────────────────────────────────────────────
-def fetch_activities(user_id, start_date, end_date):
+def fetch_activities_full(user_id, start_date, end_date):
+    """Returns (total, meetings, calls, daily_dict)
+    daily_dict: {date_str: {total, calls, meetings}}
+    """
     items = get_all("/activities", {
-        "user_id": user_id,
-        "due_date_start": start_date.isoformat(),
-        "due_date_end": end_date.isoformat(),
+        "user_id":    user_id,
+        "start_date": start_date.isoformat(),
+        "end_date":   end_date.isoformat(),
         "done": 1,
     })
     valid = [a for a in items if (a.get("type") or "") in VALID_TYPES]
-    total = len(valid)
+
+    daily = {}
+    for a in valid:
+        d = (a.get("due_date") or "")[:10]
+        if not d:
+            continue
+        if d not in daily:
+            daily[d] = {"total": 0, "calls": 0, "meetings": 0}
+        daily[d]["total"] += 1
+        if a.get("type") == "call":
+            daily[d]["calls"] += 1
+        if (a.get("type") or "") in MEETING_TYPES:
+            daily[d]["meetings"] += 1
+
+    total    = len(valid)
     meetings = sum(1 for a in valid if (a.get("type") or "") in MEETING_TYPES)
-    calls = sum(1 for a in valid if a.get("type") == "call")
-    return total, meetings, calls
+    calls    = sum(1 for a in valid if a.get("type") == "call")
+    return total, meetings, calls, daily
 
 
 # ─── DEALS ───────────────────────────────────────────────────────
-def fetch_won_deals(user_id, start_date, end_date):
+def fetch_won_deals_detail(user_id, start_date, end_date):
+    """Returns list sorted by won_date asc"""
     items = get_all("/deals", {"user_id": user_id, "status": "won"})
-    filtered = [
-        d for d in items
-        if start_date.isoformat() <= (d.get("won_time") or "")[:10] <= end_date.isoformat()
-    ]
-    count = len(filtered)
-    value = sum(d.get("value") or 0 for d in filtered)
-    return count, value
+    result = []
+    for d in items:
+        won = (d.get("won_time") or "")[:10]
+        if not won or not (start_date.isoformat() <= won <= end_date.isoformat()):
+            continue
+        value = d.get("value") or 0
+        result.append({
+            "title":      d.get("title") or "—",
+            "value":      value,
+            "won_date":   won,
+            "porte":      get_porte(value) if value > 0 else "R$0",
+            "commission": get_commission(value) if value > 0 else 0,
+        })
+    result.sort(key=lambda x: x["won_date"])
+    return result
 
 
 def fetch_pipeline_stages():
-    """Retorna dicionário {nome_lower: stage_id} do pipeline Vendas Lughy."""
     pipelines = api_get("/pipelines").get("data") or []
     pipeline_id = None
     for p in pipelines:
@@ -125,201 +179,737 @@ def count_open_deals(user_id, stage_id):
 
 
 # ─── FORMATAÇÃO ──────────────────────────────────────────────────
-def brl(value):
-    """Formata valor em reais: R$ 1.234"""
-    return f"R$ {int(value):,}".replace(",", ".")
+def brl_k(value):
+    """R$356k ou R$89k"""
+    if value >= 1000:
+        return f"R${int(value/1000)}k"
+    return f"R${int(value)}"
 
 
-def pct(won, prop):
-    total = won + prop
-    return f"{round(won / total * 100, 1)}%" if total > 0 else "—"
+def brl_full(value):
+    """R$ 1.780"""
+    return f"R${int(value):,}".replace(",", ".")
+
+
+def fmt_date_pt(iso):
+    """2026-07-16 → 16/jul"""
+    if not iso or len(iso) < 10:
+        return "—"
+    months = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"]
+    m = int(iso[5:7])
+    d = iso[8:10]
+    return f"{d}/{months[m-1]}"
+
+
+def fmt_mes_pt(d):
+    """date → SET/2026"""
+    months = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"]
+    return f"{months[d.month-1]}/{d.year}"
+
+
+def fmt_dd_mm(d):
+    """date → 07/09"""
+    return f"{d.day:02d}/{d.month:02d}"
 
 
 # ─── HTML ────────────────────────────────────────────────────────
+def deal_row_html(deal):
+    won_str  = fmt_date_pt(deal["won_date"])
+    val_str  = brl_k(deal["value"]) if deal["value"] > 0 else "R$0"
+    comm_str = brl_full(deal["commission"]) if deal["commission"] > 0 else "—"
+    porte    = deal["porte"]
+
+    if deal["commission"] > 0:
+        comm_html = f'<span style="font-family:\'Sora\',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">+{comm_str}</span>'
+    else:
+        comm_html = '<span style="font-family:\'Sora\',sans-serif;font-size:13px;font-weight:700;color:var(--muted)">—</span>'
+
+    return f'''          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--s2);border-radius:var(--r-sm);padding:8px 12px">
+            <span style="font-size:12.5px;color:var(--sub)">{deal["title"]}</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:11px;color:var(--muted)">{won_str}</span>
+              <span style="font-size:10.5px;background:var(--s3);border-radius:4px;padding:2px 7px;color:var(--muted)">{porte}</span>
+              <span style="font-size:11.5px;color:var(--muted)">{val_str}</span>
+              {comm_html}
+            </div>
+          </div>'''
+
+
+def js_arr(lst):
+    return json.dumps(lst)
+
+
 def gerar_html(d):
-    today_str = date.today().strftime("%d/%m/%Y")
+    today    = d["today"]
+    lmon     = d["lmon"]
+    lsun     = d["lsun"]
+    mes_ini  = d["mes_ini"]
 
-    def funil_row(stage, count, max_c):
-        w = min(100, round(count / max(1, max_c) * 100))
-        return f"""
-        <div class="funil-row">
-          <span class="funil-stage">{stage}</span>
-          <div class="funil-bar"><div class="funil-fill" style="width:{w}%"></div></div>
-          <span class="funil-num">{count}</span>
-        </div>"""
+    # semana labels
+    sem_label = f"{fmt_dd_mm(lmon)}/{lmon.year} &#8211; {fmt_dd_mm(lsun)}/{lsun.year}"
+    mes_label = fmt_mes_pt(today)
+    mes_range = f"{fmt_dd_mm(mes_ini)}&#8211;{fmt_dd_mm(today)}/{today.month:02d}"
+    gen_date  = today.strftime("%d/%m/%Y")
 
-    def funil_card(nome, emoji, refin, prop, ganho, conv):
-        m = max(1, refin, prop, ganho)
-        return f"""
-      <div class="card">
-        <div class="card-name">{emoji} {nome} · Conversão <strong>{conv}</strong></div>
-        {funil_row("Refinamento", refin, m)}
-        {funil_row("Proposta", prop, m)}
-        {funil_row("Ganho 2026", ganho, m)}
-      </div>"""
+    # comissão Q3 deals html
+    s_deals_html = "\n".join(deal_row_html(dl) for dl in d["s_q3_deals"]) if d["s_q3_deals"] else \
+        '          <div style="margin-top:14px;background:var(--s2);border-radius:var(--r-sm);padding:12px 14px;font-size:11.5px;color:var(--muted)">Nenhum deal ganho no Q3/2026.</div>'
+    l_deals_html = "\n".join(deal_row_html(dl) for dl in d["l_q3_deals"]) if d["l_q3_deals"] else \
+        '          <div style="margin-top:14px;background:var(--s2);border-radius:var(--r-sm);padding:12px 14px;font-size:11.5px;color:var(--muted)">Nenhum deal ganho no Q3/2026.</div>'
 
-    return f"""<!DOCTYPE html>
-<html lang="pt-BR">
+    # bar chart meta
+    s_meta_w = min(100, round(d["s_conv"] / 20 * 100, 1)) if d["s_conv"] else 0
+    l_meta_w = min(100, round(d["l_conv"] / 20 * 100, 1)) if d["l_conv"] else 0
+
+    # funnel bar heights (relative to 76px max)
+    def bar_h(val, ref_val, max_h=76):
+        if not ref_val:
+            return max_h
+        return max(5, round(val / ref_val * max_h))
+
+    s_max = max(d["s_ref"], d["s_prop"], d["s_won_2026"], 1)
+    l_max = max(d["l_ref"], d["l_prop"], d["l_won_2026"], 1)
+
+    s_conv_str = f"{d['s_conv']}%" if d["s_conv"] else "—"
+    l_conv_str = f"{d['l_conv']}%" if d["l_conv"] else "—"
+
+    def pct_str(a, b):
+        return f"{round(a/b*100)}%" if b else "—"
+
+    # day labels JS array
+    day_labels_js = js_arr(d["day_labels"])
+
+    return f"""<!doctype html>
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Painel Comercial Lughy</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap">
 <style>
 :root {{
-  --bg:#0f1117; --surface:#1a1d2e; --card:#20243a;
-  --accent:#6c63ff; --green:#43d9a2; --yellow:#f6c90e;
-  --text:#e2e8f0; --muted:#8892a4; --border:#2d3150;
+  --bg:       #0d1021;
+  --s1:       #141829;
+  --s2:       #1b2038;
+  --s3:       #222642;
+  --border:   #252a45;
+  --text:     #e6eaf5;
+  --sub:      #9aa0c0;
+  --muted:    #5e658a;
+  --steph:    #4A90D9;
+  --steph-lo: rgba(74,144,217,.12);
+  --luis:     #2ECC9A;
+  --luis-lo:  rgba(46,204,154,.12);
+  --danger:   #e25c70;
+  --danger-lo:rgba(226,92,112,.12);
+  --gold:     #f0c040;
+  --gold-lo:  rgba(240,192,64,.10);
+  --r: 10px;
+  --r-sm: 6px;
 }}
-*{{box-sizing:border-box;margin:0;padding:0}}
-body{{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;padding:1.5rem;max-width:960px;margin:0 auto}}
-h1{{font-size:1.4rem;font-weight:700;color:var(--accent);margin-bottom:.2rem}}
-.sub{{color:var(--muted);font-size:.82rem;margin-bottom:1.5rem}}
-.sec{{font-size:.85rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:1.5rem 0 .75rem;border-left:3px solid var(--accent);padding-left:.6rem}}
-.grid{{display:grid;grid-template-columns:1fr 1fr;gap:1rem}}
-@media(max-width:600px){{.grid{{grid-template-columns:1fr}}}}
-.card{{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem}}
-.card-name{{font-size:.78rem;color:var(--muted);margin-bottom:.6rem;font-weight:600}}
-.kpi{{display:flex;gap:1.5rem}}
-.kpi-item{{text-align:center}}
-.kpi-v{{font-size:1.7rem;font-weight:700;line-height:1}}
-.kpi-l{{font-size:.68rem;color:var(--muted);margin-top:.2rem}}
-.meet .kpi-v{{color:var(--accent)}}
-.call .kpi-v{{color:var(--green)}}
-table{{width:100%;border-collapse:collapse;font-size:.85rem}}
-th{{color:var(--muted);font-weight:600;text-align:left;padding:.4rem .6rem;border-bottom:1px solid var(--border)}}
-td{{padding:.5rem .6rem}}
-tr:nth-child(even) td{{background:rgba(255,255,255,.02)}}
-.badge{{display:inline-block;padding:.15rem .5rem;border-radius:4px;font-size:.75rem;font-weight:600;background:rgba(108,99,255,.15);color:var(--accent)}}
-.funil-row{{display:flex;align-items:center;gap:.75rem;padding:.45rem 0;border-bottom:1px solid var(--border)}}
-.funil-stage{{flex:1;font-size:.83rem}}
-.funil-bar{{flex:3;background:var(--border);border-radius:4px;height:7px;overflow:hidden}}
-.funil-fill{{height:100%;border-radius:4px;background:var(--accent)}}
-.funil-num{{font-weight:700;font-size:.88rem;width:2rem;text-align:right}}
-.footer{{color:var(--muted);font-size:.72rem;margin-top:1.5rem;text-align:right}}
+@media (prefers-color-scheme: light) {{
+  :root:not([data-theme="dark"]) {{
+    --bg:#f0f2f9;--s1:#ffffff;--s2:#f5f6fc;--s3:#eaecf6;
+    --border:#d4d8f0;--text:#0d1021;--sub:#4a5080;--muted:#8890b8;
+  }}
+}}
+:root[data-theme="light"] {{
+  --bg:#f0f2f9;--s1:#ffffff;--s2:#f5f6fc;--s3:#eaecf6;
+  --border:#d4d8f0;--text:#0d1021;--sub:#4a5080;--muted:#8890b8;
+}}
+*,*::before,*::after{{box-sizing:border-box;margin:0;padding:0}}
+body{{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans-serif;font-size:14px;line-height:1.5}}
+canvas{{display:block}}
+.hd{{background:var(--s1);border-bottom:1px solid var(--border);padding:20px 32px;display:flex;align-items:center;justify-content:space-between;gap:16px}}
+.hd-left{{display:flex;align-items:center;gap:14px}}
+.hd-logo{{width:40px;height:40px;background:linear-gradient(135deg,var(--steph),#6ea8e8);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:800;font-size:17px;color:#fff;flex-shrink:0}}
+.hd-title{{font-family:'Sora',sans-serif;font-weight:700;font-size:17px;letter-spacing:-0.2px}}
+.hd-title span{{color:var(--steph)}}
+.hd-sub{{color:var(--sub);font-size:12.5px;margin-top:1px}}
+.hd-right{{text-align:right}}
+.hd-period{{font-family:'Sora',sans-serif;font-weight:600;font-size:13px}}
+.hd-gen{{color:var(--muted);font-size:11.5px;margin-top:2px}}
+.page{{max-width:1180px;margin:0 auto;padding:28px 24px 56px}}
+.sec-head{{display:flex;align-items:center;gap:10px;margin:32px 0 14px}}
+.sec-num{{font-family:'Sora',sans-serif;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase}}
+.sec-title{{font-family:'Sora',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--sub)}}
+.sec-rule{{flex:1;height:1px;background:var(--border)}}
+.card{{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:20px}}
+.kpi-grid{{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px}}
+.person-card{{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}}
+.person-bar{{height:4px}}
+.person-bar.s{{background:linear-gradient(90deg,var(--steph),#6ea8e8)}}
+.person-bar.l{{background:linear-gradient(90deg,var(--luis),#64debb)}}
+.person-body{{padding:16px 18px 18px}}
+.person-name{{font-family:'Sora',sans-serif;font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;margin-bottom:14px}}
+.person-dot{{width:8px;height:8px;border-radius:50%;flex-shrink:0}}
+.kpi-row{{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}}
+.kpi-tile{{background:var(--s2);border-radius:var(--r-sm);padding:12px 10px;text-align:center}}
+.kpi-n{{font-family:'Sora',sans-serif;font-size:32px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}}
+.kpi-lbl{{font-size:10.5px;color:var(--muted);margin-top:5px;line-height:1.3}}
+.fv-wrap{{display:flex;align-items:flex-end;gap:0;height:120px;padding-bottom:24px;position:relative}}
+.fv-stage{{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;position:relative}}
+.fv-bar{{width:100%;border-radius:4px 4px 0 0;transition:height .3s}}
+.fv-count{{font-family:'Sora',sans-serif;font-size:13px;font-weight:800;line-height:1;margin-bottom:5px;font-variant-numeric:tabular-nums}}
+.fv-lbl{{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap;font-weight:600}}
+.fv-arrow{{width:36px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:24px;gap:2px;flex-shrink:0}}
+.fv-pct{{font-family:'Sora',sans-serif;font-size:10px;font-weight:700;white-space:nowrap}}
+.fv-chevron{{font-size:16px;color:var(--border);line-height:1}}
+.chart-section{{display:grid;grid-template-columns:1fr 220px;gap:14px;align-items:start}}
+.chart-header{{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}}
+.chart-title{{font-weight:600;font-size:13px}}
+.legend{{display:flex;gap:14px}}
+.leg-item{{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--sub)}}
+.leg-dot{{width:8px;height:8px;border-radius:2px;flex-shrink:0}}
+.monthly{{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:16px}}
+.monthly-head{{font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:600;margin-bottom:14px}}
+.monthly-row{{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}}
+.monthly-name{{font-size:12.5px;color:var(--sub)}}
+.monthly-val{{font-family:'Sora',sans-serif;font-size:26px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}}
+.monthly-hr{{border:none;border-top:1px solid var(--border);margin:12px 0}}
+.monthly-total{{display:flex;align-items:center;justify-content:space-between}}
+.monthly-total-lbl{{font-size:11px;color:var(--muted)}}
+.monthly-total-val{{font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:var(--gold);font-variant-numeric:tabular-nums}}
+.footer{{margin-top:48px;border-top:1px solid var(--border);padding-top:16px;display:flex;justify-content:space-between;align-items:flex-end;gap:24px}}
+.footer-left{{font-size:11.5px;color:var(--muted);line-height:1.7}}
+.footer-right{{font-size:11px;color:var(--muted);text-align:right;flex-shrink:0}}
 </style>
-</head>
-<body>
-<h1>📊 Painel Comercial Lughy</h1>
-<div class="sub">Semana {d['week_label']} · Atualizado em {today_str}</div>
 
-<div class="sec">📅 Semana Passada ({d['week_label']})</div>
-<div class="grid">
-  <div class="card">
-    <div class="card-name">👩 Stephanie</div>
-    <div class="kpi">
-      <div class="kpi-item"><div class="kpi-v">{d['s_sem_total']}</div><div class="kpi-l">Atividades</div></div>
-      <div class="kpi-item meet"><div class="kpi-v">{d['s_sem_meet']}</div><div class="kpi-l">Reuniões</div></div>
-      <div class="kpi-item call"><div class="kpi-v">{d['s_sem_call']}</div><div class="kpi-l">Ligações</div></div>
+<!-- HEADER -->
+<div class="hd">
+  <div class="hd-left">
+    <div class="hd-logo">L</div>
+    <div>
+      <div class="hd-title">Painel Comercial <span>Lughy</span></div>
+      <div class="hd-sub">Time comercial &middot; Stephanie &amp; Luis</div>
     </div>
   </div>
-  <div class="card">
-    <div class="card-name">👨 Luis</div>
-    <div class="kpi">
-      <div class="kpi-item"><div class="kpi-v">{d['l_sem_total']}</div><div class="kpi-l">Atividades</div></div>
-      <div class="kpi-item meet"><div class="kpi-v">{d['l_sem_meet']}</div><div class="kpi-l">Reuniões</div></div>
-      <div class="kpi-item call"><div class="kpi-v">{d['l_sem_call']}</div><div class="kpi-l">Ligações</div></div>
-    </div>
+  <div class="hd-right">
+    <div class="hd-period">Semana {sem_label}</div>
+    <div class="hd-gen">Gerado em {gen_date} &middot; M&ecirc;s atual: {mes_range}</div>
   </div>
 </div>
 
-<div class="sec">📆 Mês Corrente ({d['month_label']})</div>
-<div class="grid">
-  <div class="card">
-    <div class="card-name">👩 Stephanie</div>
-    <div class="kpi">
-      <div class="kpi-item"><div class="kpi-v">{d['s_mes_total']}</div><div class="kpi-l">Atividades</div></div>
-      <div class="kpi-item meet"><div class="kpi-v">{d['s_mes_meet']}</div><div class="kpi-l">Reuniões</div></div>
-      <div class="kpi-item call"><div class="kpi-v">{d['s_mes_call']}</div><div class="kpi-l">Ligações</div></div>
+<div class="page">
+
+  <!-- KPI CARDS – Semana passada -->
+  <div class="sec-head" style="margin-top:0">
+    <span class="sec-num">Semana passada &middot; {fmt_dd_mm(lmon)}/{lmon.year} &#8211; {fmt_dd_mm(lsun)}/{lsun.year}</span>
+    <span class="sec-rule"></span>
+  </div>
+  <div class="kpi-grid">
+    <div class="person-card">
+      <div class="person-bar s"></div>
+      <div class="person-body">
+        <div class="person-name">
+          <div class="person-dot" style="background:var(--steph)"></div>Stephanie
+        </div>
+        <div class="kpi-row">
+          <div class="kpi-tile">
+            <div class="kpi-n" style="color:var(--steph)">{d['s_w_calls']}</div>
+            <div class="kpi-lbl">Liga&ccedil;&otilde;es</div>
+          </div>
+          <div class="kpi-tile">
+            <div class="kpi-n" style="color:var(--steph)">{d['s_w_meet']}</div>
+            <div class="kpi-lbl">Reuni&otilde;es</div>
+          </div>
+          <div class="kpi-tile">
+            <div class="kpi-n" style="color:var(--steph)">{d['s_w_total']}</div>
+            <div class="kpi-lbl">Atividades conclu&iacute;das</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="person-card">
+      <div class="person-bar l"></div>
+      <div class="person-body">
+        <div class="person-name">
+          <div class="person-dot" style="background:var(--luis)"></div>Luis
+        </div>
+        <div class="kpi-row">
+          <div class="kpi-tile">
+            <div class="kpi-n" style="color:var(--luis)">{d['l_w_calls']}</div>
+            <div class="kpi-lbl">Liga&ccedil;&otilde;es</div>
+          </div>
+          <div class="kpi-tile">
+            <div class="kpi-n" style="color:var(--luis)">{d['l_w_meet']}</div>
+            <div class="kpi-lbl">Reuni&otilde;es</div>
+          </div>
+          <div class="kpi-tile">
+            <div class="kpi-n" style="color:var(--luis)">{d['l_w_total']}</div>
+            <div class="kpi-lbl">Atividades conclu&iacute;das</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
-  <div class="card">
-    <div class="card-name">👨 Luis</div>
-    <div class="kpi">
-      <div class="kpi-item"><div class="kpi-v">{d['l_mes_total']}</div><div class="kpi-l">Atividades</div></div>
-      <div class="kpi-item meet"><div class="kpi-v">{d['l_mes_meet']}</div><div class="kpi-l">Reuniões</div></div>
-      <div class="kpi-item call"><div class="kpi-v">{d['l_mes_call']}</div><div class="kpi-l">Ligações</div></div>
+
+  <!-- SECTION 01: FUNIL DE CONVERSÃO -->
+  <div class="sec-head">
+    <span class="sec-num">01</span>
+    <span class="sec-title">Funil de Convers&atilde;o &mdash; Proposta &rarr; Ganho &middot; 2026</span>
+    <span class="sec-rule"></span>
+  </div>
+  <div style="font-size:11px;color:var(--muted);margin-bottom:12px">Pipeline Vendas-Lughy &middot; apenas 2026 &middot; convers&atilde;o estimada via API (Proposta&#8594;Ganho) &middot; meta: 20%</div>
+  <div class="kpi-grid">
+    <div class="person-card">
+      <div class="person-bar s"></div>
+      <div class="person-body">
+        <div class="person-name">
+          <div class="person-dot" style="background:var(--steph)"></div>Stephanie
+          <span style="margin-left:auto;font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:var(--steph)">{s_conv_str}</span>
+          <span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:4px">Prop&rarr;Ganho</span>
+        </div>
+        <div class="fv-wrap">
+          <div class="fv-stage">
+            <div class="fv-count" style="color:var(--gold)">{d['s_ref']}</div>
+            <div class="fv-bar" style="height:{bar_h(d['s_ref'], s_max)}px;background:linear-gradient(180deg,rgba(240,192,64,.7),rgba(240,192,64,.35))"></div>
+            <div class="fv-lbl">Refinamento</div>
+          </div>
+          <div class="fv-arrow">
+            <div class="fv-pct" style="color:var(--muted)">{pct_str(d['s_prop'], d['s_ref'])}</div>
+            <div class="fv-chevron">&rsaquo;</div>
+          </div>
+          <div class="fv-stage">
+            <div class="fv-count" style="color:var(--gold)">{d['s_prop']}</div>
+            <div class="fv-bar" style="height:{bar_h(d['s_prop'], s_max)}px;background:linear-gradient(180deg,rgba(240,192,64,.7),rgba(240,192,64,.35))"></div>
+            <div class="fv-lbl">Proposta</div>
+          </div>
+          <div class="fv-arrow">
+            <div class="fv-pct" style="color:var(--steph);font-size:12px;font-weight:800">{s_conv_str}</div>
+            <div class="fv-chevron">&rsaquo;</div>
+          </div>
+          <div class="fv-stage">
+            <div class="fv-count" style="color:var(--luis)">{d['s_won_2026']}</div>
+            <div class="fv-bar" style="height:{bar_h(d['s_won_2026'], s_max)}px;background:var(--luis)"></div>
+            <div class="fv-lbl">Ganho</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;background:var(--gold-lo);border:1px solid rgba(240,192,64,.2);border-radius:var(--r-sm);padding:8px 12px;font-size:11px;color:var(--sub);display:flex;align-items:center;justify-content:space-between">
+          <span>Meta 20%</span>
+          <div style="width:120px;background:var(--s2);border-radius:4px;height:8px;overflow:hidden;position:relative">
+            <div style="position:absolute;left:66.7%;top:0;bottom:0;width:1.5px;background:var(--gold)"></div>
+            <div style="height:100%;background:linear-gradient(90deg,rgba(74,144,217,.8),rgba(74,144,217,.3));border-radius:4px;width:{s_meta_w}%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="person-card">
+      <div class="person-bar l"></div>
+      <div class="person-body">
+        <div class="person-name">
+          <div class="person-dot" style="background:var(--luis)"></div>Luis
+          <span style="margin-left:auto;font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:var(--luis)">{l_conv_str}</span>
+          <span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:4px">Prop&rarr;Ganho</span>
+        </div>
+        <div class="fv-wrap">
+          <div class="fv-stage">
+            <div class="fv-count" style="color:var(--gold)">{d['l_ref']}</div>
+            <div class="fv-bar" style="height:{bar_h(d['l_ref'], l_max)}px;background:linear-gradient(180deg,rgba(240,192,64,.7),rgba(240,192,64,.35))"></div>
+            <div class="fv-lbl">Refinamento</div>
+          </div>
+          <div class="fv-arrow">
+            <div class="fv-pct" style="color:var(--muted)">{pct_str(d['l_prop'], d['l_ref'])}</div>
+            <div class="fv-chevron">&rsaquo;</div>
+          </div>
+          <div class="fv-stage">
+            <div class="fv-count" style="color:var(--gold)">{d['l_prop']}</div>
+            <div class="fv-bar" style="height:{bar_h(d['l_prop'], l_max)}px;background:linear-gradient(180deg,rgba(240,192,64,.7),rgba(240,192,64,.35))"></div>
+            <div class="fv-lbl">Proposta</div>
+          </div>
+          <div class="fv-arrow">
+            <div class="fv-pct" style="color:var(--luis);font-size:12px;font-weight:800">{l_conv_str}</div>
+            <div class="fv-chevron">&rsaquo;</div>
+          </div>
+          <div class="fv-stage">
+            <div class="fv-count" style="color:var(--luis)">{d['l_won_2026']}</div>
+            <div class="fv-bar" style="height:{bar_h(d['l_won_2026'], l_max)}px;background:var(--luis)"></div>
+            <div class="fv-lbl">Ganho</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;background:var(--gold-lo);border:1px solid rgba(240,192,64,.2);border-radius:var(--r-sm);padding:8px 12px;font-size:11px;color:var(--sub);display:flex;align-items:center;justify-content:space-between">
+          <span>Meta 20%</span>
+          <div style="width:120px;background:var(--s2);border-radius:4px;height:8px;overflow:hidden;position:relative">
+            <div style="position:absolute;left:66.7%;top:0;bottom:0;width:1.5px;background:var(--gold)"></div>
+            <div style="height:100%;background:linear-gradient(90deg,rgba(46,204,154,.8),rgba(46,204,154,.3));border-radius:4px;width:{l_meta_w}%"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
+
+  <!-- SECTION 02: COMISSÃO TRIMESTRAL -->
+  <div class="sec-head">
+    <span class="sec-num">02</span>
+    <span class="sec-title">Comiss&atilde;o Trimestral &mdash; Q3/2026 &middot; Jul&ndash;Set</span>
+    <span class="sec-rule"></span>
+  </div>
+  <div class="kpi-grid">
+    <div class="person-card">
+      <div class="person-bar s"></div>
+      <div class="person-body">
+        <div class="person-name">
+          <div class="person-dot" style="background:var(--steph)"></div>Stephanie
+        </div>
+        <div class="kpi-row" style="margin-bottom:18px">
+          <div class="kpi-tile">
+            <div class="kpi-n" style="color:var(--steph)">{d['s_q3_count']}</div>
+            <div class="kpi-lbl">Ganhos Q3</div>
+          </div>
+          <div class="kpi-tile">
+            <div class="kpi-n" style="color:var(--steph);font-size:22px">{brl_k(d['s_q3_value'])}</div>
+            <div class="kpi-lbl">Valor total</div>
+          </div>
+          <div class="kpi-tile">
+            <div class="kpi-n" style="color:var(--gold);font-size:22px">{brl_full(d['s_q3_commission'])}</div>
+            <div class="kpi-lbl">Comiss&atilde;o</div>
+          </div>
+        </div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:600;margin-bottom:8px">Breakdown por deal</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+{s_deals_html}
+        </div>
+      </div>
+    </div>
+    <div class="person-card">
+      <div class="person-bar l"></div>
+      <div class="person-body">
+        <div class="person-name">
+          <div class="person-dot" style="background:var(--luis)"></div>Luis
+        </div>
+        <div class="kpi-row" style="margin-bottom:18px">
+          <div class="kpi-tile">
+            <div class="kpi-n" style="color:var(--luis)">{d['l_q3_count']}</div>
+            <div class="kpi-lbl">Ganhos Q3</div>
+          </div>
+          <div class="kpi-tile">
+            <div class="kpi-n" style="color:var(--luis);font-size:22px">{brl_k(d['l_q3_value'])}</div>
+            <div class="kpi-lbl">Valor total</div>
+          </div>
+          <div class="kpi-tile">
+            <div class="kpi-n" style="color:var(--gold);font-size:22px">{brl_full(d['l_q3_commission'])}</div>
+            <div class="kpi-lbl">Comiss&atilde;o</div>
+          </div>
+        </div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:600;margin-bottom:8px">Breakdown por deal</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+{l_deals_html}
+        </div>
+        <div style="margin-top:14px;background:var(--s2);border-radius:var(--r-sm);padding:12px 14px;font-size:11.5px;color:var(--muted);line-height:1.5">
+          Q3 em andamento &#8212; <strong style="color:var(--sub)">Set 2026</strong>. Novos fechamentos aumentam a comiss&atilde;o.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela de Portes -->
+  <div class="card" style="margin-top:14px;padding:16px 24px">
+    <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:600;margin-bottom:12px">Tabela de portes &middot; comiss&atilde;o por deal</div>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px">
+      <div style="background:var(--s2);border-radius:var(--r-sm);padding:10px;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--sub)">D</div>
+        <div style="font-size:10px;color:var(--muted);margin:3px 0">&ge; R$1</div>
+        <div style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">R$150</div>
+      </div>
+      <div style="background:var(--s2);border-radius:var(--r-sm);padding:10px;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--sub)">C</div>
+        <div style="font-size:10px;color:var(--muted);margin:3px 0">&ge; R$20k</div>
+        <div style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">R$300</div>
+      </div>
+      <div style="background:var(--s2);border-radius:var(--r-sm);padding:10px;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--sub)">B</div>
+        <div style="font-size:10px;color:var(--muted);margin:3px 0">&ge; R$90k</div>
+        <div style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">R$600</div>
+      </div>
+      <div style="background:var(--s2);border-radius:var(--r-sm);padding:10px;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--sub)">A-</div>
+        <div style="font-size:10px;color:var(--muted);margin:3px 0">&ge; R$180k</div>
+        <div style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">R$1.000</div>
+      </div>
+      <div style="background:var(--s2);border-radius:var(--r-sm);padding:10px;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--sub)">A+</div>
+        <div style="font-size:10px;color:var(--muted);margin:3px 0">&ge; R$350k</div>
+        <div style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">R$2.000</div>
+      </div>
+      <div style="background:var(--s2);border-radius:var(--r-sm);padding:10px;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--gold)">Top</div>
+        <div style="font-size:10px;color:var(--muted);margin:3px 0">&ge; R$500k</div>
+        <div style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">R$3.000</div>
+      </div>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:var(--muted)">Deals com valor R$0 n&atilde;o contabilizados &middot; filtro Q3/2026 = 01/07&ndash;30/09 &middot; pipeline Vendas&ndash;Lughy</div>
+  </div>
+
+  <!-- SECTION 03: LIGAÇÕES -->
+  <div class="sec-head">
+    <span class="sec-num">03</span>
+    <span class="sec-title">Liga&ccedil;&otilde;es</span>
+    <span class="sec-rule"></span>
+  </div>
+  <div class="chart-section">
+    <div class="card">
+      <div class="chart-header">
+        <span class="chart-title">Por dia &mdash; semana passada ({fmt_dd_mm(lmon)}&ndash;{fmt_dd_mm(lsun)}/set)</span>
+        <div class="legend">
+          <div class="leg-item"><div class="leg-dot" style="background:var(--steph)"></div> Stephanie</div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--luis)"></div> Luis</div>
+        </div>
+      </div>
+      <canvas id="cLig" height="160"></canvas>
+    </div>
+    <div class="monthly">
+      <div class="monthly-head">M&ecirc;s atual &middot; {mes_label} {mes_range}</div>
+      <div class="monthly-row">
+        <span class="monthly-name">Stephanie</span>
+        <span class="monthly-val" style="color:var(--steph)">{d['s_m_calls']}</span>
+      </div>
+      <div class="monthly-row">
+        <span class="monthly-name">Luis</span>
+        <span class="monthly-val" style="color:var(--luis)">{d['l_m_calls']}</span>
+      </div>
+      <hr class="monthly-hr">
+      <div class="monthly-total">
+        <span class="monthly-total-lbl">Total m&ecirc;s</span>
+        <span class="monthly-total-val">{d['s_m_calls'] + d['l_m_calls']}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 04: ATIVIDADES -->
+  <div class="sec-head">
+    <span class="sec-num">04</span>
+    <span class="sec-title">Atividades Conclu&iacute;das</span>
+    <span class="sec-rule"></span>
+  </div>
+  <div class="chart-section">
+    <div class="card">
+      <div class="chart-header">
+        <span class="chart-title">Por dia &mdash; semana passada ({fmt_dd_mm(lmon)}&ndash;{fmt_dd_mm(lsun)}/set)</span>
+        <div class="legend">
+          <div class="leg-item"><div class="leg-dot" style="background:var(--steph)"></div> Stephanie</div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--luis)"></div> Luis</div>
+        </div>
+      </div>
+      <canvas id="cAtiv" height="160"></canvas>
+    </div>
+    <div class="monthly">
+      <div class="monthly-head">M&ecirc;s atual &middot; {mes_label} {mes_range}</div>
+      <div class="monthly-row">
+        <span class="monthly-name">Stephanie</span>
+        <span class="monthly-val" style="color:var(--steph)">{d['s_m_total']}</span>
+      </div>
+      <div class="monthly-row">
+        <span class="monthly-name">Luis</span>
+        <span class="monthly-val" style="color:var(--luis)">{d['l_m_total']}</span>
+      </div>
+      <hr class="monthly-hr">
+      <div class="monthly-total">
+        <span class="monthly-total-lbl">Total m&ecirc;s</span>
+        <span class="monthly-total-val">{d['s_m_total'] + d['l_m_total']}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 05: REUNIÕES -->
+  <div class="sec-head">
+    <span class="sec-num">05</span>
+    <span class="sec-title">Reuni&otilde;es</span>
+    <span class="sec-rule"></span>
+  </div>
+  <div class="chart-section">
+    <div class="card">
+      <div class="chart-header">
+        <span class="chart-title">Por dia &mdash; semana passada ({fmt_dd_mm(lmon)}&ndash;{fmt_dd_mm(lsun)}/set)</span>
+        <div class="legend">
+          <div class="leg-item"><div class="leg-dot" style="background:var(--steph)"></div> Stephanie</div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--luis)"></div> Luis</div>
+        </div>
+      </div>
+      <canvas id="cReu" height="160"></canvas>
+    </div>
+    <div class="monthly">
+      <div class="monthly-head">M&ecirc;s atual &middot; {mes_label} {mes_range}</div>
+      <div class="monthly-row">
+        <span class="monthly-name">Stephanie</span>
+        <span class="monthly-val" style="color:var(--steph)">{d['s_m_meet']}</span>
+      </div>
+      <div class="monthly-row">
+        <span class="monthly-name">Luis</span>
+        <span class="monthly-val" style="color:var(--luis)">{d['l_m_meet']}</span>
+      </div>
+      <hr class="monthly-hr">
+      <div class="monthly-total">
+        <span class="monthly-total-lbl">Total m&ecirc;s</span>
+        <span class="monthly-total-val">{d['s_m_meet'] + d['l_m_meet']}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-left">
+      <div>Liga&ccedil;&otilde;es = tipo <em>call</em> &middot; Reuni&otilde;es = <em>meeting</em> + <em>reuniao_pre_venda_</em> + <em>reuniao_de_apresentacao_de</em></div>
+      <div>Funil de convers&atilde;o: estimativa via API (deals ganhos 2026 / deals ganhos + em proposta) &middot; pipeline Vendas&ndash;Lughy</div>
+      <div>Comiss&atilde;o: Tabela de Portes &middot; Q3/2026 = 01/07&ndash;30/09 &middot; deals com valor R$0 exclu&iacute;dos</div>
+      <div>Atividades: done=true &middot; semana {fmt_dd_mm(lmon)}&ndash;{fmt_dd_mm(lsun)} e m&ecirc;s {mes_range} &middot; apenas Stephanie (ID 24155859) e Luis (ID 13236195)</div>
+    </div>
+    <div class="footer-right">Gerado pelo GitHub Actions &middot; {gen_date}<br>Lughy &middot; Time Comercial</div>
+  </div>
+
 </div>
 
-<div class="sec">💰 Comissão Trimestral — {d['q3_label']}</div>
-<div class="card">
-  <table>
-    <thead><tr><th>Vendedor</th><th>Deals ganhos</th><th>Valor total</th><th>Comissão est.</th></tr></thead>
-    <tbody>
-      <tr><td>Stephanie</td><td>{d['s_deals']}</td><td>{brl(d['s_value'])}</td><td><span class="badge">{brl(d['s_commission'])}</span></td></tr>
-      <tr><td>Luis</td><td>{d['l_deals']}</td><td>{brl(d['l_value'])}</td><td><span class="badge">{brl(d['l_commission'])}</span></td></tr>
-    </tbody>
-  </table>
-</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+(function() {{
+  const s = getComputedStyle(document.documentElement);
+  const STEPH  = s.getPropertyValue('--steph').trim()  || '#4A90D9';
+  const LUIS   = s.getPropertyValue('--luis').trim()   || '#2ECC9A';
+  const BORDER = s.getPropertyValue('--border').trim() || '#252a45';
+  const MUTED  = s.getPropertyValue('--muted').trim()  || '#5e658a';
 
-<div class="sec">🔀 Funil de Conversão</div>
-<div class="grid">
-  {funil_card("Stephanie", "👩", d['s_refin'], d['s_prop'], d['s_ganho'], d['s_conv'])}
-  {funil_card("Luis", "👨", d['l_refin'], d['l_prop'], d['l_ganho'], d['l_conv'])}
-</div>
+  const DAYS = {day_labels_js};
 
-<div class="footer">Gerado automaticamente pelo GitHub Actions · {today_str}</div>
+  const baseOpts = {{
+    responsive:true,
+    plugins:{{
+      legend:{{display:false}},
+      tooltip:{{mode:'index',intersect:false,backgroundColor:'#1b2038',titleColor:'#e6eaf5',bodyColor:'#9aa0c0',borderColor:'#252a45',borderWidth:1,padding:10}}
+    }},
+    scales:{{
+      x:{{grid:{{color:BORDER}},ticks:{{color:MUTED,font:{{family:'DM Sans',size:11}}}}}},
+      y:{{beginAtZero:true,grid:{{color:BORDER}},ticks:{{color:MUTED,font:{{family:'DM Sans',size:11}},stepSize:1,precision:0}}}}
+    }}
+  }};
+
+  function ds(label,data,color){{
+    return{{label,data,backgroundColor:color+'bb',hoverBackgroundColor:color,borderRadius:4,borderSkipped:false}};
+  }}
+
+  new Chart(document.getElementById('cLig'),{{
+    type:'bar',
+    data:{{labels:DAYS,datasets:[
+      ds('Stephanie',{js_arr(d['s_daily_calls'])},STEPH),
+      ds('Luis',     {js_arr(d['l_daily_calls'])},LUIS)
+    ]}},
+    options:{{...baseOpts,scales:{{...baseOpts.scales,y:{{...baseOpts.scales.y,max:Math.max(5,...{js_arr(d['s_daily_calls'])},...{js_arr(d['l_daily_calls'])})+1}}}}}}
+  }});
+
+  new Chart(document.getElementById('cAtiv'),{{
+    type:'bar',
+    data:{{labels:DAYS,datasets:[
+      ds('Stephanie',{js_arr(d['s_daily_total'])},STEPH),
+      ds('Luis',     {js_arr(d['l_daily_total'])},LUIS)
+    ]}},
+    options:{{...baseOpts,scales:{{...baseOpts.scales,y:{{...baseOpts.scales.y,ticks:{{...baseOpts.scales.y.ticks,stepSize:5}}}}}}}}
+  }});
+
+  new Chart(document.getElementById('cReu'),{{
+    type:'bar',
+    data:{{labels:DAYS,datasets:[
+      ds('Stephanie',{js_arr(d['s_daily_meet'])},STEPH),
+      ds('Luis',     {js_arr(d['l_daily_meet'])},LUIS)
+    ]}},
+    options:baseOpts
+  }});
+}})();
+</script>
+
 </body>
 </html>"""
 
 
 # ─── MAIN ────────────────────────────────────────────────────────
 def main():
-    today = date.today()
-    last_mon, last_sun = semana_passada()
+    today   = date.today()
+    lmon, lsun = semana_passada()
     mes_ini = inicio_mes()
     q3_ini, q3_fim = q3_range()
+    ano_ini = inicio_ano()
 
-    print(f"Semana passada: {last_mon} a {last_sun}")
-    print(f"Mês corrente: {mes_ini} a {today}")
-    print(f"Q3: {q3_ini} a {q3_fim}")
+    print(f"Semana: {lmon} → {lsun}")
+    print(f"Mês:    {mes_ini} → {today}")
+    print(f"Q3:     {q3_ini} → {q3_fim}")
 
-    print("Buscando atividades...")
-    s_sem = fetch_activities(STEPHANIE_ID, last_mon, last_sun)
-    l_sem = fetch_activities(LUIS_ID, last_mon, last_sun)
-    s_mes = fetch_activities(STEPHANIE_ID, mes_ini, today)
-    l_mes = fetch_activities(LUIS_ID, mes_ini, today)
+    print("Buscando atividades da semana passada...")
+    s_w_total, s_w_meet, s_w_calls, s_w_daily = fetch_activities_full(STEPHANIE_ID, lmon, lsun)
+    l_w_total, l_w_meet, l_w_calls, l_w_daily = fetch_activities_full(LUIS_ID, lmon, lsun)
+    print(f"  Stephanie semana: {s_w_total} ativ / {s_w_meet} reun / {s_w_calls} lig")
+    print(f"  Luis semana:      {l_w_total} ativ / {l_w_meet} reun / {l_w_calls} lig")
 
-    print("Buscando deals...")
-    s_deals, s_value = fetch_won_deals(STEPHANIE_ID, q3_ini, q3_fim)
-    l_deals, l_value = fetch_won_deals(LUIS_ID, q3_ini, q3_fim)
+    print("Buscando atividades do mês...")
+    s_m_total, s_m_meet, s_m_calls, _ = fetch_activities_full(STEPHANIE_ID, mes_ini, today)
+    l_m_total, l_m_meet, l_m_calls, _ = fetch_activities_full(LUIS_ID, mes_ini, today)
+    print(f"  Stephanie mês: {s_m_total} ativ / {s_m_meet} reun / {s_m_calls} lig")
+    print(f"  Luis mês:      {l_m_total} ativ / {l_m_meet} reun / {l_m_calls} lig")
 
-    print("Buscando etapas do funil...")
+    print("Buscando deals ganhos Q3...")
+    s_q3_deals = fetch_won_deals_detail(STEPHANIE_ID, q3_ini, q3_fim)
+    l_q3_deals = fetch_won_deals_detail(LUIS_ID, q3_ini, q3_fim)
+    s_q3_count      = len(s_q3_deals)
+    s_q3_value      = sum(d["value"] for d in s_q3_deals)
+    s_q3_commission = sum(d["commission"] for d in s_q3_deals)
+    l_q3_count      = len(l_q3_deals)
+    l_q3_value      = sum(d["value"] for d in l_q3_deals)
+    l_q3_commission = sum(d["commission"] for d in l_q3_deals)
+    print(f"  Stephanie Q3: {s_q3_count} deals / {brl_k(s_q3_value)} / comissão {brl_full(s_q3_commission)}")
+    print(f"  Luis Q3:      {l_q3_count} deals / {brl_k(l_q3_value)} / comissão {brl_full(l_q3_commission)}")
+
+    print("Buscando estágios do pipeline...")
     stages = fetch_pipeline_stages()
-    refin_id = next((v for k, v in stages.items() if "refinamento" in k or "pendên" in k or "pendencia" in k), None)
+    ref_id  = next((v for k, v in stages.items() if "refinamento" in k), None)
     prop_id = next((v for k, v in stages.items() if "proposta" in k), None)
 
-    s_refin = count_open_deals(STEPHANIE_ID, refin_id)
-    l_refin = count_open_deals(LUIS_ID, refin_id)
+    s_ref  = count_open_deals(STEPHANIE_ID, ref_id)
     s_prop = count_open_deals(STEPHANIE_ID, prop_id)
+    l_ref  = count_open_deals(LUIS_ID, ref_id)
     l_prop = count_open_deals(LUIS_ID, prop_id)
 
-    dados = dict(
-        week_label=f"{last_mon.strftime('%d/%m')} a {last_sun.strftime('%d/%m')}",
-        month_label=today.strftime("%b/%Y"),
-        q3_label=f"Q3 {today.year} (jul–set)",
-        # semana
-        s_sem_total=s_sem[0], s_sem_meet=s_sem[1], s_sem_call=s_sem[2],
-        l_sem_total=l_sem[0], l_sem_meet=l_sem[1], l_sem_call=l_sem[2],
-        # mês
-        s_mes_total=s_mes[0], s_mes_meet=s_mes[1], s_mes_call=s_mes[2],
-        l_mes_total=l_mes[0], l_mes_meet=l_mes[1], l_mes_call=l_mes[2],
-        # comissão
-        s_deals=s_deals, s_value=s_value, s_commission=round(s_value * COMMISSION_RATE),
-        l_deals=l_deals, l_value=l_value, l_commission=round(l_value * COMMISSION_RATE),
-        # funil
-        s_refin=s_refin, l_refin=l_refin,
-        s_prop=s_prop, l_prop=l_prop,
-        s_ganho=s_deals, l_ganho=l_deals,
-        s_conv=pct(s_deals, s_prop),
-        l_conv=pct(l_deals, l_prop),
-    )
+    # Won 2026 (para funil)
+    won_2026_s = fetch_won_deals_detail(STEPHANIE_ID, ano_ini, today)
+    won_2026_l = fetch_won_deals_detail(LUIS_ID, ano_ini, today)
+    s_won_2026 = len(won_2026_s)
+    l_won_2026 = len(won_2026_l)
 
-    html = gerar_html(dados)
+    def conv_pct(won, prop):
+        total = won + prop
+        return round(won / total * 100, 1) if total > 0 else 0
+
+    s_conv = conv_pct(s_won_2026, s_prop)
+    l_conv = conv_pct(l_won_2026, l_prop)
+
+    # Arrays diários para gráficos
+    week_days = [lmon + timedelta(days=i) for i in range(7)]
+    day_names = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
+    day_labels = [f"{day_names[i]} {(lmon + timedelta(days=i)).strftime('%d')}" for i in range(7)]
+
+    def daily_arr(daily_dict, key):
+        return [daily_dict.get(d.isoformat(), {}).get(key, 0) for d in week_days]
+
+    data = {
+        "today": today, "lmon": lmon, "lsun": lsun, "mes_ini": mes_ini,
+        "s_w_total": s_w_total, "s_w_meet": s_w_meet, "s_w_calls": s_w_calls,
+        "l_w_total": l_w_total, "l_w_meet": l_w_meet, "l_w_calls": l_w_calls,
+        "s_m_total": s_m_total, "s_m_meet": s_m_meet, "s_m_calls": s_m_calls,
+        "l_m_total": l_m_total, "l_m_meet": l_m_meet, "l_m_calls": l_m_calls,
+        "s_q3_deals": s_q3_deals, "s_q3_count": s_q3_count,
+        "s_q3_value": s_q3_value, "s_q3_commission": s_q3_commission,
+        "l_q3_deals": l_q3_deals, "l_q3_count": l_q3_count,
+        "l_q3_value": l_q3_value, "l_q3_commission": l_q3_commission,
+        "s_ref": s_ref, "s_prop": s_prop, "s_won_2026": s_won_2026, "s_conv": s_conv,
+        "l_ref": l_ref, "l_prop": l_prop, "l_won_2026": l_won_2026, "l_conv": l_conv,
+        "day_labels":     day_labels,
+        "s_daily_total":  daily_arr(s_w_daily, "total"),
+        "s_daily_calls":  daily_arr(s_w_daily, "calls"),
+        "s_daily_meet":   daily_arr(s_w_daily, "meetings"),
+        "l_daily_total":  daily_arr(l_w_daily, "total"),
+        "l_daily_calls":  daily_arr(l_w_daily, "calls"),
+        "l_daily_meet":   daily_arr(l_w_daily, "meetings"),
+    }
+
+    html = gerar_html(data)
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(html)
-    print("✅ index.html gerado com sucesso.")
+    print("index.html gerado com sucesso.")
 
 
 if __name__ == "__main__":
