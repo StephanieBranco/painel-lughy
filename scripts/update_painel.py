@@ -136,15 +136,44 @@ def fetch_activities_full(user_id, start_date, end_date):
     return total, meetings, calls, daily
 
 
+# ─── PIPELINE ID ─────────────────────────────────────────────────
+VENDAS_PIPELINE_NAME = "Vendas-Lughy"
+_pipeline_id_cache = None
+
+def get_vendas_pipeline_id():
+    """Busca o ID do pipeline 'Vendas-Lughy' (com fallback None = sem filtro)."""
+    global _pipeline_id_cache
+    if _pipeline_id_cache is not None:
+        return _pipeline_id_cache
+    try:
+        data = api_get("/pipelines")
+        for p in (data.get("data") or []):
+            if (p.get("name") or "").strip().lower() == VENDAS_PIPELINE_NAME.lower():
+                _pipeline_id_cache = p["id"]
+                return _pipeline_id_cache
+    except Exception as e:
+        print(f"Aviso: não foi possível buscar pipelines ({e}). Sem filtro de pipeline.")
+    _pipeline_id_cache = -1  # sentinel: não encontrou
+    return None
+
+
 # ─── DEALS ───────────────────────────────────────────────────────
 def fetch_won_deals_detail(user_id, start_date, end_date):
-    """Returns list sorted by won_date asc"""
-    items = get_all("/deals", {"user_id": user_id, "status": "won"})
+    """Returns list sorted by won_date asc, apenas pipeline Vendas-Lughy."""
+    pipeline_id = get_vendas_pipeline_id()
+    params = {"user_id": user_id, "status": "won"}
+    if pipeline_id and pipeline_id != -1:
+        params["pipeline_id"] = pipeline_id
+    items = get_all("/deals", params)
     result = []
     for d in items:
         won = (d.get("won_time") or "")[:10]
         if not won or not (start_date.isoformat() <= won <= end_date.isoformat()):
             continue
+        # segurança extra: ignorar deals de fora do pipeline se não foi filtrado na API
+        if pipeline_id and pipeline_id != -1:
+            if (d.get("pipeline_id") or d.get("pipeline", {}).get("id")) != pipeline_id:
+                continue
         value = d.get("value") or 0
         result.append({
             "title":      d.get("title") or "—",
@@ -261,20 +290,77 @@ def gerar_html(d):
     s_meta_w = min(100, round(d["s_conv"] / 20 * 100, 1)) if d["s_conv"] else 0
     l_meta_w = min(100, round(d["l_conv"] / 20 * 100, 1)) if d["l_conv"] else 0
 
-    # funnel bar heights (relative to 76px max)
-    def bar_h(val, ref_val, max_h=76):
-        if not ref_val:
-            return max_h
-        return max(5, round(val / ref_val * max_h))
-
-    s_max = max(d["s_ref"], d["s_prop"], d["s_won_2026"], 1)
-    l_max = max(d["l_ref"], d["l_prop"], d["l_won_2026"], 1)
-
     s_conv_str = f"{d['s_conv']}%" if d["s_conv"] else "—"
     l_conv_str = f"{d['l_conv']}%" if d["l_conv"] else "—"
 
-    def pct_str(a, b):
-        return f"{round(a/b*100)}%" if b else "—"
+    CHART_H = 160  # altura total da área das barras (px)
+
+    def funil_card(person_label, color_var, funil, meta_w):
+        ref   = funil["ref"]
+        prop  = funil["prop"]
+        ganho = funil["ganho"]
+        conv_rp = funil["conv_rp"]
+        conv_pg = funil["conv_pg"]
+        conv_pg_str = f"{conv_pg}%" if conv_pg else "—"
+        max_v = max(ref, prop, ganho, 1)
+        def bh(v):
+            return max(8, round(v / max_v * CHART_H))
+        meta_color = "var(--gold)" if conv_pg >= 20 else "var(--danger)"
+        return f"""    <div class="person-card">
+      <div class="person-bar" style="background:{color_var}"></div>
+      <div class="person-body">
+        <div class="person-name">
+          <div class="person-dot" style="background:{color_var}"></div>{person_label}
+          <span style="margin-left:auto;font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:{color_var}">{conv_pg_str}</span>
+          <span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:4px">Prop&rarr;Ganho</span>
+        </div>
+
+        <!-- Funil estilo Pipedrive Insights -->
+        <div style="display:flex;align-items:flex-end;height:{CHART_H + 32}px;padding-bottom:30px;gap:0;margin:8px 0">
+
+          <!-- Barra Refinamento -->
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;position:relative">
+            <div style="position:absolute;top:0;font-size:13px;font-weight:700;color:var(--text);line-height:1">{ref}</div>
+            <div style="width:88%;height:{bh(ref)}px;background:#F5A623;border-radius:4px 4px 0 0"></div>
+            <div style="position:absolute;bottom:-22px;font-size:9px;color:var(--muted);text-align:center;line-height:1.3">Reuni&otilde;es de<br>Refinamento</div>
+          </div>
+
+          <!-- Badge ref→prop -->
+          <div style="flex:0 0 52px;display:flex;align-items:flex-end;justify-content:center;height:100%;padding-bottom:2px">
+            <div style="background:rgba(255,255,255,0.07);border-radius:10px;padding:3px 9px;font-size:11px;color:var(--sub);font-weight:600">{conv_rp}%</div>
+          </div>
+
+          <!-- Barra Proposta -->
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;position:relative">
+            <div style="position:absolute;top:0;font-size:13px;font-weight:700;color:var(--text);line-height:1">{prop}</div>
+            <div style="width:88%;height:{bh(prop)}px;background:#F5A623;border-radius:4px 4px 0 0"></div>
+            <div style="position:absolute;bottom:-22px;font-size:9px;color:var(--muted);text-align:center">Proposta</div>
+          </div>
+
+          <!-- Badge prop→ganho -->
+          <div style="flex:0 0 52px;display:flex;align-items:flex-end;justify-content:center;height:100%;padding-bottom:2px">
+            <div style="background:rgba(255,255,255,0.07);border-radius:10px;padding:3px 9px;font-size:11px;color:var(--sub);font-weight:600">{conv_pg_str}</div>
+          </div>
+
+          <!-- Barra Ganho -->
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;position:relative">
+            <div style="position:absolute;top:0;font-size:13px;font-weight:700;color:var(--text);line-height:1">{ganho}</div>
+            <div style="width:88%;height:{bh(ganho)}px;background:#2ECC9A;border-radius:4px 4px 0 0"></div>
+            <div style="position:absolute;bottom:-22px;font-size:9px;color:var(--muted);text-align:center">Ganho</div>
+          </div>
+        </div>
+
+        <!-- Meta -->
+        <div style="margin-top:8px;background:var(--gold-lo);border:1px solid rgba(240,192,64,.2);border-radius:var(--r-sm);padding:8px 12px;font-size:11px;color:var(--sub);display:flex;align-items:center;justify-content:space-between">
+          <span>Meta 20%</span>
+          <div style="width:120px;background:var(--s2);border-radius:4px;height:8px;overflow:hidden;position:relative">
+            <div style="position:absolute;left:66.7%;top:0;bottom:0;width:1.5px;background:var(--gold)"></div>
+            <div style="height:100%;background:{meta_color};border-radius:4px;width:{meta_w}%;opacity:0.7"></div>
+          </div>
+          <span style="font-weight:600;color:{meta_color}">{conv_pg_str}</span>
+        </div>
+      </div>
+    </div>"""
 
     # day labels JS array
     day_labels_js = js_arr(d["day_labels"])
@@ -450,92 +536,10 @@ canvas{{display:block}}
     <span class="sec-title">Funil de Convers&atilde;o &mdash; Proposta &rarr; Ganho &middot; 2026</span>
     <span class="sec-rule"></span>
   </div>
-  <div style="font-size:11px;color:var(--muted);margin-bottom:12px">Pipeline Vendas-Lughy &middot; apenas 2026 &middot; convers&atilde;o estimada via API (Proposta&#8594;Ganho) &middot; meta: 20%</div>
+  <div style="font-size:11px;color:var(--muted);margin-bottom:12px">Pipeline Vendas-Lughy &middot; apenas 2026 &middot; contagens inseridas manualmente &middot; meta: 20%</div>
   <div class="kpi-grid">
-    <div class="person-card">
-      <div class="person-bar s"></div>
-      <div class="person-body">
-        <div class="person-name">
-          <div class="person-dot" style="background:var(--steph)"></div>Stephanie
-          <span style="margin-left:auto;font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:var(--steph)">{s_conv_str}</span>
-          <span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:4px">Prop&rarr;Ganho</span>
-        </div>
-        <div class="fv-wrap">
-          <div class="fv-stage">
-            <div class="fv-count" style="color:var(--gold)">{d['s_ref']}</div>
-            <div class="fv-bar" style="height:{bar_h(d['s_ref'], s_max)}px;background:linear-gradient(180deg,rgba(240,192,64,.7),rgba(240,192,64,.35))"></div>
-            <div class="fv-lbl">Refinamento</div>
-          </div>
-          <div class="fv-arrow">
-            <div class="fv-pct" style="color:var(--muted)">{pct_str(d['s_prop'], d['s_ref'])}</div>
-            <div class="fv-chevron">&rsaquo;</div>
-          </div>
-          <div class="fv-stage">
-            <div class="fv-count" style="color:var(--gold)">{d['s_prop']}</div>
-            <div class="fv-bar" style="height:{bar_h(d['s_prop'], s_max)}px;background:linear-gradient(180deg,rgba(240,192,64,.7),rgba(240,192,64,.35))"></div>
-            <div class="fv-lbl">Proposta</div>
-          </div>
-          <div class="fv-arrow">
-            <div class="fv-pct" style="color:var(--steph);font-size:12px;font-weight:800">{s_conv_str}</div>
-            <div class="fv-chevron">&rsaquo;</div>
-          </div>
-          <div class="fv-stage">
-            <div class="fv-count" style="color:var(--luis)">{d['s_won_2026']}</div>
-            <div class="fv-bar" style="height:{bar_h(d['s_won_2026'], s_max)}px;background:var(--luis)"></div>
-            <div class="fv-lbl">Ganho</div>
-          </div>
-        </div>
-        <div style="margin-top:10px;background:var(--gold-lo);border:1px solid rgba(240,192,64,.2);border-radius:var(--r-sm);padding:8px 12px;font-size:11px;color:var(--sub);display:flex;align-items:center;justify-content:space-between">
-          <span>Meta 20%</span>
-          <div style="width:120px;background:var(--s2);border-radius:4px;height:8px;overflow:hidden;position:relative">
-            <div style="position:absolute;left:66.7%;top:0;bottom:0;width:1.5px;background:var(--gold)"></div>
-            <div style="height:100%;background:linear-gradient(90deg,rgba(74,144,217,.8),rgba(74,144,217,.3));border-radius:4px;width:{s_meta_w}%"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="person-card">
-      <div class="person-bar l"></div>
-      <div class="person-body">
-        <div class="person-name">
-          <div class="person-dot" style="background:var(--luis)"></div>Luis
-          <span style="margin-left:auto;font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:var(--luis)">{l_conv_str}</span>
-          <span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:4px">Prop&rarr;Ganho</span>
-        </div>
-        <div class="fv-wrap">
-          <div class="fv-stage">
-            <div class="fv-count" style="color:var(--gold)">{d['l_ref']}</div>
-            <div class="fv-bar" style="height:{bar_h(d['l_ref'], l_max)}px;background:linear-gradient(180deg,rgba(240,192,64,.7),rgba(240,192,64,.35))"></div>
-            <div class="fv-lbl">Refinamento</div>
-          </div>
-          <div class="fv-arrow">
-            <div class="fv-pct" style="color:var(--muted)">{pct_str(d['l_prop'], d['l_ref'])}</div>
-            <div class="fv-chevron">&rsaquo;</div>
-          </div>
-          <div class="fv-stage">
-            <div class="fv-count" style="color:var(--gold)">{d['l_prop']}</div>
-            <div class="fv-bar" style="height:{bar_h(d['l_prop'], l_max)}px;background:linear-gradient(180deg,rgba(240,192,64,.7),rgba(240,192,64,.35))"></div>
-            <div class="fv-lbl">Proposta</div>
-          </div>
-          <div class="fv-arrow">
-            <div class="fv-pct" style="color:var(--luis);font-size:12px;font-weight:800">{l_conv_str}</div>
-            <div class="fv-chevron">&rsaquo;</div>
-          </div>
-          <div class="fv-stage">
-            <div class="fv-count" style="color:var(--luis)">{d['l_won_2026']}</div>
-            <div class="fv-bar" style="height:{bar_h(d['l_won_2026'], l_max)}px;background:var(--luis)"></div>
-            <div class="fv-lbl">Ganho</div>
-          </div>
-        </div>
-        <div style="margin-top:10px;background:var(--gold-lo);border:1px solid rgba(240,192,64,.2);border-radius:var(--r-sm);padding:8px 12px;font-size:11px;color:var(--sub);display:flex;align-items:center;justify-content:space-between">
-          <span>Meta 20%</span>
-          <div style="width:120px;background:var(--s2);border-radius:4px;height:8px;overflow:hidden;position:relative">
-            <div style="position:absolute;left:66.7%;top:0;bottom:0;width:1.5px;background:var(--gold)"></div>
-            <div style="height:100%;background:linear-gradient(90deg,rgba(46,204,154,.8),rgba(46,204,154,.3));border-radius:4px;width:{l_meta_w}%"></div>
-          </div>
-        </div>
-      </div>
-    </div>
+{funil_card("Stephanie", "var(--steph)", d["s_funil"], s_meta_w)}
+{funil_card("Luis", "var(--luis)", d["l_funil"], l_meta_w)}
   </div>
 
   <!-- SECTION 02: COMISSÃO TRIMESTRAL -->
@@ -870,16 +874,34 @@ def main():
     s_won_2026 = len(won_2026_s)
     l_won_2026 = len(won_2026_l)
 
-    def conv_pct(won, prop):
-        total = won + prop
-        return round(won / total * 100, 1) if total > 0 else 0
+    # Funil manual via config.json — você informa as quantidades, o script calcula os %
+    cfg = {}
+    try:
+        with open("config.json", encoding="utf-8") as f:
+            cfg = json.load(f)
+    except FileNotFoundError:
+        pass
 
-    s_conv = conv_pct(s_won_2026, s_prop)
-    l_conv = conv_pct(l_won_2026, l_prop)
+    def build_funil(cfg_person, api_ref, api_prop, api_ganho):
+        fp = cfg_person.get("funil", {})
+        ref   = fp["refinamento"] if fp.get("refinamento") is not None else api_ref
+        prop  = fp["proposta"]    if fp.get("proposta")    is not None else api_prop
+        ganho = fp["ganho"]       if fp.get("ganho")       is not None else api_ganho
+        conv_rp = round(prop  / ref  * 100) if ref  > 0 else 0
+        conv_pg = round(ganho / prop * 100) if prop > 0 else 0
+        return {"ref": ref, "prop": prop, "ganho": ganho,
+                "conv_rp": conv_rp, "conv_pg": conv_pg}
+
+    s_funil = build_funil(cfg.get("stephanie", {}), s_ref, s_prop, s_won_2026)
+    l_funil = build_funil(cfg.get("luis",      {}), l_ref, l_prop, l_won_2026)
+    s_conv  = s_funil["conv_pg"]
+    l_conv  = l_funil["conv_pg"]
+    print(f"  Funil Stephanie: ref={s_funil['ref']} prop={s_funil['prop']} ganho={s_funil['ganho']} -> {s_conv}%")
+    print(f"  Funil Luis:      ref={l_funil['ref']} prop={l_funil['prop']} ganho={l_funil['ganho']} -> {l_conv}%")
 
     # Arrays diários para gráficos
     week_days = [lmon + timedelta(days=i) for i in range(7)]
-    day_names = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
+    day_names = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sab", "Dom"]
     day_labels = [f"{day_names[i]} {(lmon + timedelta(days=i)).strftime('%d')}" for i in range(7)]
 
     def daily_arr(daily_dict, key):
@@ -895,8 +917,8 @@ def main():
         "s_q3_value": s_q3_value, "s_q3_commission": s_q3_commission,
         "l_q3_deals": l_q3_deals, "l_q3_count": l_q3_count,
         "l_q3_value": l_q3_value, "l_q3_commission": l_q3_commission,
-        "s_ref": s_ref, "s_prop": s_prop, "s_won_2026": s_won_2026, "s_conv": s_conv,
-        "l_ref": l_ref, "l_prop": l_prop, "l_won_2026": l_won_2026, "l_conv": l_conv,
+        "s_funil": s_funil, "s_conv": s_conv,
+        "l_funil": l_funil, "l_conv": l_conv,
         "day_labels":     day_labels,
         "s_daily_total":  daily_arr(s_w_daily, "total"),
         "s_daily_calls":  daily_arr(s_w_daily, "calls"),
