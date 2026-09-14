@@ -1,0 +1,41 @@
+name: Atualizar Painel Comercial Lughy
+
+on:
+  schedule:
+    # Toda segunda-feira às 13h UTC = 10h BRT
+    # Roda 1 hora depois da tarefa agendada do Claude (12h UTC)
+    - cron: '0 13 * * 1'
+  workflow_dispatch:
+    # Permite rodar manualmente pelo GitHub quando necessário
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # necessário para fazer commit no repo
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependências
+        run: pip install requests
+
+      - name: Gerar painel HTML
+        env:
+          PIPEDRIVE_TOKEN: ${{ secrets.PIPEDRIVE_TOKEN }}
+        run: python scripts/update_painel.py
+
+      - name: Commit e push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --staged --quiet && echo "Nenhuma alteração detectada." || \
+            git commit -m "chore: atualização automática semanal $(date +'%d/%m/%Y')" && \
+            git push
