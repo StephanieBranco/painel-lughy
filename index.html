@@ -1,146 +1,643 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+<!doctype html>
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Painel Comercial Lughy</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap">
 <style>
 :root {
-  --bg:#0f1117; --surface:#1a1d2e; --card:#20243a;
-  --accent:#6c63ff; --green:#43d9a2; --yellow:#f6c90e;
-  --text:#e2e8f0; --muted:#8892a4; --border:#2d3150;
+  --bg:       #0d1021;
+  --s1:       #141829;
+  --s2:       #1b2038;
+  --s3:       #222642;
+  --border:   #252a45;
+  --text:     #e6eaf5;
+  --sub:      #9aa0c0;
+  --muted:    #5e658a;
+  --steph:    #4A90D9;
+  --steph-lo: rgba(74,144,217,.12);
+  --luis:     #2ECC9A;
+  --luis-lo:  rgba(46,204,154,.12);
+  --danger:   #e25c70;
+  --danger-lo:rgba(226,92,112,.12);
+  --gold:     #f0c040;
+  --gold-lo:  rgba(240,192,64,.10);
+  --r: 10px;
+  --r-sm: 6px;
 }
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;padding:1.5rem;max-width:960px;margin:0 auto}
-h1{font-size:1.4rem;font-weight:700;color:var(--accent);margin-bottom:.2rem}
-.sub{color:var(--muted);font-size:.82rem;margin-bottom:1.5rem}
-.sec{font-size:.85rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:1.5rem 0 .75rem;border-left:3px solid var(--accent);padding-left:.6rem}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
-@media(max-width:600px){.grid{grid-template-columns:1fr}}
-.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem}
-.card-name{font-size:.78rem;color:var(--muted);margin-bottom:.6rem;font-weight:600}
-.kpi{display:flex;gap:1.5rem}
-.kpi-item{text-align:center}
-.kpi-v{font-size:1.7rem;font-weight:700;line-height:1}
-.kpi-l{font-size:.68rem;color:var(--muted);margin-top:.2rem}
-.meet .kpi-v{color:var(--accent)}
-.call .kpi-v{color:var(--green)}
-table{width:100%;border-collapse:collapse;font-size:.85rem}
-th{color:var(--muted);font-weight:600;text-align:left;padding:.4rem .6rem;border-bottom:1px solid var(--border)}
-td{padding:.5rem .6rem}
-tr:nth-child(even) td{background:rgba(255,255,255,.02)}
-.badge{display:inline-block;padding:.15rem .5rem;border-radius:4px;font-size:.75rem;font-weight:600;background:rgba(108,99,255,.15);color:var(--accent)}
-.funil-row{display:flex;align-items:center;gap:.75rem;padding:.45rem 0;border-bottom:1px solid var(--border)}
-.funil-stage{flex:1;font-size:.83rem}
-.funil-bar{flex:3;background:var(--border);border-radius:4px;height:7px;overflow:hidden}
-.funil-fill{height:100%;border-radius:4px;background:var(--accent)}
-.funil-num{font-weight:700;font-size:.88rem;width:2rem;text-align:right}
-.footer{color:var(--muted);font-size:.72rem;margin-top:1.5rem;text-align:right}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg:#f0f2f9;--s1:#ffffff;--s2:#f5f6fc;--s3:#eaecf6;
+    --border:#d4d8f0;--text:#0d1021;--sub:#4a5080;--muted:#8890b8;
+  }
+}
+:root[data-theme="light"] {
+  --bg:#f0f2f9;--s1:#ffffff;--s2:#f5f6fc;--s3:#eaecf6;
+  --border:#d4d8f0;--text:#0d1021;--sub:#4a5080;--muted:#8890b8;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans-serif;font-size:14px;line-height:1.5}
+canvas{display:block}
+.hd{background:var(--s1);border-bottom:1px solid var(--border);padding:20px 32px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.hd-left{display:flex;align-items:center;gap:14px}
+.hd-logo{width:40px;height:40px;background:linear-gradient(135deg,var(--steph),#6ea8e8);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:800;font-size:17px;color:#fff;flex-shrink:0}
+.hd-title{font-family:'Sora',sans-serif;font-weight:700;font-size:17px;letter-spacing:-0.2px}
+.hd-title span{color:var(--steph)}
+.hd-sub{color:var(--sub);font-size:12.5px;margin-top:1px}
+.hd-right{text-align:right}
+.hd-period{font-family:'Sora',sans-serif;font-weight:600;font-size:13px}
+.hd-gen{color:var(--muted);font-size:11.5px;margin-top:2px}
+.page{max-width:1180px;margin:0 auto;padding:28px 24px 56px}
+.sec-head{display:flex;align-items:center;gap:10px;margin:32px 0 14px}
+.sec-num{font-family:'Sora',sans-serif;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase}
+.sec-title{font-family:'Sora',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--sub)}
+.sec-rule{flex:1;height:1px;background:var(--border)}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:20px}
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px}
+.person-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.person-bar{height:4px}
+.person-bar.s{background:linear-gradient(90deg,var(--steph),#6ea8e8)}
+.person-bar.l{background:linear-gradient(90deg,var(--luis),#64debb)}
+.person-body{padding:16px 18px 18px}
+.person-name{font-family:'Sora',sans-serif;font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.person-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kpi-tile{background:var(--s2);border-radius:var(--r-sm);padding:12px 10px;text-align:center}
+.kpi-n{font-family:'Sora',sans-serif;font-size:32px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.kpi-lbl{font-size:10.5px;color:var(--muted);margin-top:5px;line-height:1.3}
+.fv-wrap{display:flex;align-items:flex-end;gap:0;height:120px;padding-bottom:24px;position:relative}
+.fv-stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;position:relative}
+.fv-bar{width:100%;border-radius:4px 4px 0 0;transition:height .3s}
+.fv-count{font-family:'Sora',sans-serif;font-size:13px;font-weight:800;line-height:1;margin-bottom:5px;font-variant-numeric:tabular-nums}
+.fv-lbl{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap;font-weight:600}
+.fv-arrow{width:36px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:24px;gap:2px;flex-shrink:0}
+.fv-pct{font-family:'Sora',sans-serif;font-size:10px;font-weight:700;white-space:nowrap}
+.fv-chevron{font-size:16px;color:var(--border);line-height:1}
+.chart-section{display:grid;grid-template-columns:1fr 220px;gap:14px;align-items:start}
+.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.chart-title{font-weight:600;font-size:13px}
+.legend{display:flex;gap:14px}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--sub)}
+.leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.monthly{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+.monthly-head{font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:600;margin-bottom:14px}
+.monthly-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.monthly-name{font-size:12.5px;color:var(--sub)}
+.monthly-val{font-family:'Sora',sans-serif;font-size:26px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.monthly-hr{border:none;border-top:1px solid var(--border);margin:12px 0}
+.monthly-total{display:flex;align-items:center;justify-content:space-between}
+.monthly-total-lbl{font-size:11px;color:var(--muted)}
+.monthly-total-val{font-family:'Sora',sans-serif;font-size:20px;font-weight:700;color:var(--gold);font-variant-numeric:tabular-nums}
+.footer{margin-top:48px;border-top:1px solid var(--border);padding-top:16px;display:flex;justify-content:space-between;align-items:flex-end;gap:24px}
+.footer-left{font-size:11.5px;color:var(--muted);line-height:1.7}
+.footer-right{font-size:11px;color:var(--muted);text-align:right;flex-shrink:0}
 </style>
-</head>
-<body>
-<h1>📊 Painel Comercial Lughy</h1>
-<div class="sub">Semana 07/09 a 13/09 · Atualizado em 14/09/2026</div>
 
-<div class="sec">📅 Semana Passada (07/09 a 13/09)</div>
-<div class="grid">
-  <div class="card">
-    <div class="card-name">👩 Stephanie</div>
-    <div class="kpi">
-      <div class="kpi-item"><div class="kpi-v">5673</div><div class="kpi-l">Atividades</div></div>
-      <div class="kpi-item meet"><div class="kpi-v">228</div><div class="kpi-l">Reuniões</div></div>
-      <div class="kpi-item call"><div class="kpi-v">245</div><div class="kpi-l">Ligações</div></div>
+<!-- HEADER -->
+<div class="hd">
+  <div class="hd-left">
+    <div class="hd-logo">L</div>
+    <div>
+      <div class="hd-title">Painel Comercial <span>Lughy</span></div>
+      <div class="hd-sub">Time comercial &middot; Stephanie &amp; Luis</div>
     </div>
   </div>
-  <div class="card">
-    <div class="card-name">👨 Luis</div>
-    <div class="kpi">
-      <div class="kpi-item"><div class="kpi-v">8475</div><div class="kpi-l">Atividades</div></div>
-      <div class="kpi-item meet"><div class="kpi-v">555</div><div class="kpi-l">Reuniões</div></div>
-      <div class="kpi-item call"><div class="kpi-v">560</div><div class="kpi-l">Ligações</div></div>
-    </div>
+  <div class="hd-right">
+    <div class="hd-period">Semana 07/09/2026 &#8211; 13/09/2026</div>
+    <div class="hd-gen">Gerado em 14/09/2026 &middot; M&ecirc;s atual: 01/09&#8211;14/09/09</div>
   </div>
 </div>
 
-<div class="sec">📆 Mês Corrente (Sep/2026)</div>
-<div class="grid">
-  <div class="card">
-    <div class="card-name">👩 Stephanie</div>
-    <div class="kpi">
-      <div class="kpi-item"><div class="kpi-v">5673</div><div class="kpi-l">Atividades</div></div>
-      <div class="kpi-item meet"><div class="kpi-v">228</div><div class="kpi-l">Reuniões</div></div>
-      <div class="kpi-item call"><div class="kpi-v">245</div><div class="kpi-l">Ligações</div></div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-name">👨 Luis</div>
-    <div class="kpi">
-      <div class="kpi-item"><div class="kpi-v">8475</div><div class="kpi-l">Atividades</div></div>
-      <div class="kpi-item meet"><div class="kpi-v">555</div><div class="kpi-l">Reuniões</div></div>
-      <div class="kpi-item call"><div class="kpi-v">560</div><div class="kpi-l">Ligações</div></div>
-    </div>
-  </div>
-</div>
+<div class="page">
 
-<div class="sec">💰 Comissão Trimestral — Q3 2026 (jul–set)</div>
-<div class="card">
-  <table>
-    <thead><tr><th>Vendedor</th><th>Deals ganhos</th><th>Valor total</th><th>Comissão est.</th></tr></thead>
-    <tbody>
-      <tr><td>Stephanie</td><td>4</td><td>R$ 356.000</td><td><span class="badge">R$ 1.780</span></td></tr>
-      <tr><td>Luis</td><td>8</td><td>R$ 88.808</td><td><span class="badge">R$ 444</span></td></tr>
-    </tbody>
-  </table>
-</div>
-
-<div class="sec">🔀 Funil de Conversão</div>
-<div class="grid">
-  
-      <div class="card">
-        <div class="card-name">👩 Stephanie · Conversão <strong>100.0%</strong></div>
-        
-        <div class="funil-row">
-          <span class="funil-stage">Refinamento</span>
-          <div class="funil-bar"><div class="funil-fill" style="width:25%"></div></div>
-          <span class="funil-num">1</span>
+  <!-- KPI CARDS – Semana passada -->
+  <div class="sec-head" style="margin-top:0">
+    <span class="sec-num">Semana passada &middot; 07/09/2026 &#8211; 13/09/2026</span>
+    <span class="sec-rule"></span>
+  </div>
+  <div class="kpi-grid">
+    <div class="person-card">
+      <div class="person-bar s"></div>
+      <div class="person-body">
+        <div class="person-name">
+          <div class="person-dot" style="background:var(--steph)"></div>Stephanie
         </div>
-        
-        <div class="funil-row">
-          <span class="funil-stage">Proposta</span>
-          <div class="funil-bar"><div class="funil-fill" style="width:0%"></div></div>
-          <span class="funil-num">0</span>
-        </div>
-        
-        <div class="funil-row">
-          <span class="funil-stage">Ganho 2026</span>
-          <div class="funil-bar"><div class="funil-fill" style="width:100%"></div></div>
-          <span class="funil-num">4</span>
+        <div class="kpi-row">
+          <div class="kpi-tile">
+            <div class="kpi-n" style="color:var(--steph)">3</div>
+            <div class="kpi-lbl">Liga&ccedil;&otilde;es</div>
+          </div>
+          <div class="kpi-tile">
+            <div class="kpi-n" style="color:var(--steph)">2</div>
+            <div class="kpi-lbl">Reuni&otilde;es</div>
+          </div>
+          <div class="kpi-tile">
+            <div class="kpi-n" style="color:var(--steph)">101</div>
+            <div class="kpi-lbl">Atividades conclu&iacute;das</div>
+          </div>
         </div>
       </div>
-  
-      <div class="card">
-        <div class="card-name">👨 Luis · Conversão <strong>88.9%</strong></div>
-        
-        <div class="funil-row">
-          <span class="funil-stage">Refinamento</span>
-          <div class="funil-bar"><div class="funil-fill" style="width:12%"></div></div>
-          <span class="funil-num">1</span>
+    </div>
+    <div class="person-card">
+      <div class="person-bar l"></div>
+      <div class="person-body">
+        <div class="person-name">
+          <div class="person-dot" style="background:var(--luis)"></div>Luis
         </div>
-        
-        <div class="funil-row">
-          <span class="funil-stage">Proposta</span>
-          <div class="funil-bar"><div class="funil-fill" style="width:12%"></div></div>
-          <span class="funil-num">1</span>
-        </div>
-        
-        <div class="funil-row">
-          <span class="funil-stage">Ganho 2026</span>
-          <div class="funil-bar"><div class="funil-fill" style="width:100%"></div></div>
-          <span class="funil-num">8</span>
+        <div class="kpi-row">
+          <div class="kpi-tile">
+            <div class="kpi-n" style="color:var(--luis)">1</div>
+            <div class="kpi-lbl">Liga&ccedil;&otilde;es</div>
+          </div>
+          <div class="kpi-tile">
+            <div class="kpi-n" style="color:var(--luis)">4</div>
+            <div class="kpi-lbl">Reuni&otilde;es</div>
+          </div>
+          <div class="kpi-tile">
+            <div class="kpi-n" style="color:var(--luis)">69</div>
+            <div class="kpi-lbl">Atividades conclu&iacute;das</div>
+          </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- SECTION 01: FUNIL DE CONVERSÃO -->
+  <div class="sec-head">
+    <span class="sec-num">01</span>
+    <span class="sec-title">Funil de Convers&atilde;o &mdash; Proposta &rarr; Ganho &middot; 2026</span>
+    <span class="sec-rule"></span>
+  </div>
+  <div style="font-size:11px;color:var(--muted);margin-bottom:12px">Pipeline Vendas-Lughy &middot; apenas 2026 &middot; convers&atilde;o estimada via API (Proposta&#8594;Ganho) &middot; meta: 20%</div>
+  <div class="kpi-grid">
+    <div class="person-card">
+      <div class="person-bar s"></div>
+      <div class="person-body">
+        <div class="person-name">
+          <div class="person-dot" style="background:var(--steph)"></div>Stephanie
+          <span style="margin-left:auto;font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:var(--steph)">100.0%</span>
+          <span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:4px">Prop&rarr;Ganho</span>
+        </div>
+        <div class="fv-wrap">
+          <div class="fv-stage">
+            <div class="fv-count" style="color:var(--gold)">1</div>
+            <div class="fv-bar" style="height:7px;background:linear-gradient(180deg,rgba(240,192,64,.7),rgba(240,192,64,.35))"></div>
+            <div class="fv-lbl">Refinamento</div>
+          </div>
+          <div class="fv-arrow">
+            <div class="fv-pct" style="color:var(--muted)">0%</div>
+            <div class="fv-chevron">&rsaquo;</div>
+          </div>
+          <div class="fv-stage">
+            <div class="fv-count" style="color:var(--gold)">0</div>
+            <div class="fv-bar" style="height:5px;background:linear-gradient(180deg,rgba(240,192,64,.7),rgba(240,192,64,.35))"></div>
+            <div class="fv-lbl">Proposta</div>
+          </div>
+          <div class="fv-arrow">
+            <div class="fv-pct" style="color:var(--steph);font-size:12px;font-weight:800">100.0%</div>
+            <div class="fv-chevron">&rsaquo;</div>
+          </div>
+          <div class="fv-stage">
+            <div class="fv-count" style="color:var(--luis)">11</div>
+            <div class="fv-bar" style="height:76px;background:var(--luis)"></div>
+            <div class="fv-lbl">Ganho</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;background:var(--gold-lo);border:1px solid rgba(240,192,64,.2);border-radius:var(--r-sm);padding:8px 12px;font-size:11px;color:var(--sub);display:flex;align-items:center;justify-content:space-between">
+          <span>Meta 20%</span>
+          <div style="width:120px;background:var(--s2);border-radius:4px;height:8px;overflow:hidden;position:relative">
+            <div style="position:absolute;left:66.7%;top:0;bottom:0;width:1.5px;background:var(--gold)"></div>
+            <div style="height:100%;background:linear-gradient(90deg,rgba(74,144,217,.8),rgba(74,144,217,.3));border-radius:4px;width:100%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="person-card">
+      <div class="person-bar l"></div>
+      <div class="person-body">
+        <div class="person-name">
+          <div class="person-dot" style="background:var(--luis)"></div>Luis
+          <span style="margin-left:auto;font-family:'Sora',sans-serif;font-size:22px;font-weight:800;color:var(--luis)">97.4%</span>
+          <span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:4px">Prop&rarr;Ganho</span>
+        </div>
+        <div class="fv-wrap">
+          <div class="fv-stage">
+            <div class="fv-count" style="color:var(--gold)">1</div>
+            <div class="fv-bar" style="height:5px;background:linear-gradient(180deg,rgba(240,192,64,.7),rgba(240,192,64,.35))"></div>
+            <div class="fv-lbl">Refinamento</div>
+          </div>
+          <div class="fv-arrow">
+            <div class="fv-pct" style="color:var(--muted)">100%</div>
+            <div class="fv-chevron">&rsaquo;</div>
+          </div>
+          <div class="fv-stage">
+            <div class="fv-count" style="color:var(--gold)">1</div>
+            <div class="fv-bar" style="height:5px;background:linear-gradient(180deg,rgba(240,192,64,.7),rgba(240,192,64,.35))"></div>
+            <div class="fv-lbl">Proposta</div>
+          </div>
+          <div class="fv-arrow">
+            <div class="fv-pct" style="color:var(--luis);font-size:12px;font-weight:800">97.4%</div>
+            <div class="fv-chevron">&rsaquo;</div>
+          </div>
+          <div class="fv-stage">
+            <div class="fv-count" style="color:var(--luis)">37</div>
+            <div class="fv-bar" style="height:76px;background:var(--luis)"></div>
+            <div class="fv-lbl">Ganho</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;background:var(--gold-lo);border:1px solid rgba(240,192,64,.2);border-radius:var(--r-sm);padding:8px 12px;font-size:11px;color:var(--sub);display:flex;align-items:center;justify-content:space-between">
+          <span>Meta 20%</span>
+          <div style="width:120px;background:var(--s2);border-radius:4px;height:8px;overflow:hidden;position:relative">
+            <div style="position:absolute;left:66.7%;top:0;bottom:0;width:1.5px;background:var(--gold)"></div>
+            <div style="height:100%;background:linear-gradient(90deg,rgba(46,204,154,.8),rgba(46,204,154,.3));border-radius:4px;width:100%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 02: COMISSÃO TRIMESTRAL -->
+  <div class="sec-head">
+    <span class="sec-num">02</span>
+    <span class="sec-title">Comiss&atilde;o Trimestral &mdash; Q3/2026 &middot; Jul&ndash;Set</span>
+    <span class="sec-rule"></span>
+  </div>
+  <div class="kpi-grid">
+    <div class="person-card">
+      <div class="person-bar s"></div>
+      <div class="person-body">
+        <div class="person-name">
+          <div class="person-dot" style="background:var(--steph)"></div>Stephanie
+        </div>
+        <div class="kpi-row" style="margin-bottom:18px">
+          <div class="kpi-tile">
+            <div class="kpi-n" style="color:var(--steph)">4</div>
+            <div class="kpi-lbl">Ganhos Q3</div>
+          </div>
+          <div class="kpi-tile">
+            <div class="kpi-n" style="color:var(--steph);font-size:22px">R$356k</div>
+            <div class="kpi-lbl">Valor total</div>
+          </div>
+          <div class="kpi-tile">
+            <div class="kpi-n" style="color:var(--gold);font-size:22px">R$1.500</div>
+            <div class="kpi-lbl">Comiss&atilde;o</div>
+          </div>
+        </div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:600;margin-bottom:8px">Breakdown por deal</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--s2);border-radius:var(--r-sm);padding:8px 12px">
+            <span style="font-size:12.5px;color:var(--sub)">Sistema inscrição de Eventos - mykids</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:11px;color:var(--muted)">16/jul</span>
+              <span style="font-size:10.5px;background:var(--s3);border-radius:4px;padding:2px 7px;color:var(--muted)">R$0</span>
+              <span style="font-size:11.5px;color:var(--muted)">R$0</span>
+              <span style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--muted)">—</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--s2);border-radius:var(--r-sm);padding:8px 12px">
+            <span style="font-size:12.5px;color:var(--sub)">A.J. RORATO Marcelo Utumi - ETAPA DE ANÁLISE</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:11px;color:var(--muted)">21/jul</span>
+              <span style="font-size:10.5px;background:var(--s3);border-radius:4px;padding:2px 7px;color:var(--muted)">C</span>
+              <span style="font-size:11.5px;color:var(--muted)">R$58k</span>
+              <span style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">+R$300</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--s2);border-radius:var(--r-sm);padding:8px 12px">
+            <span style="font-size:12.5px;color:var(--sub)">Keep - Desenvolvimento</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:11px;color:var(--muted)">21/jul</span>
+              <span style="font-size:10.5px;background:var(--s3);border-radius:4px;padding:2px 7px;color:var(--muted)">B</span>
+              <span style="font-size:11.5px;color:var(--muted)">R$148k</span>
+              <span style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">+R$600</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--s2);border-radius:var(--r-sm);padding:8px 12px">
+            <span style="font-size:12.5px;color:var(--sub)">Minhas Proteções</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:11px;color:var(--muted)">14/ago</span>
+              <span style="font-size:10.5px;background:var(--s3);border-radius:4px;padding:2px 7px;color:var(--muted)">B</span>
+              <span style="font-size:11.5px;color:var(--muted)">R$150k</span>
+              <span style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">+R$600</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="person-card">
+      <div class="person-bar l"></div>
+      <div class="person-body">
+        <div class="person-name">
+          <div class="person-dot" style="background:var(--luis)"></div>Luis
+        </div>
+        <div class="kpi-row" style="margin-bottom:18px">
+          <div class="kpi-tile">
+            <div class="kpi-n" style="color:var(--luis)">8</div>
+            <div class="kpi-lbl">Ganhos Q3</div>
+          </div>
+          <div class="kpi-tile">
+            <div class="kpi-n" style="color:var(--luis);font-size:22px">R$88k</div>
+            <div class="kpi-lbl">Valor total</div>
+          </div>
+          <div class="kpi-tile">
+            <div class="kpi-n" style="color:var(--gold);font-size:22px">R$300</div>
+            <div class="kpi-lbl">Comiss&atilde;o</div>
+          </div>
+        </div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:600;margin-bottom:8px">Breakdown por deal</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--s2);border-radius:var(--r-sm);padding:8px 12px">
+            <span style="font-size:12.5px;color:var(--sub)">Situ AcrilicosPaulo Teles (cópia)</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:11px;color:var(--muted)">02/jul</span>
+              <span style="font-size:10.5px;background:var(--s3);border-radius:4px;padding:2px 7px;color:var(--muted)">R$0</span>
+              <span style="font-size:11.5px;color:var(--muted)">R$0</span>
+              <span style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--muted)">—</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--s2);border-radius:var(--r-sm);padding:8px 12px">
+            <span style="font-size:12.5px;color:var(--sub)">QUERO COMPRARkaio ferrari (cópia)</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:11px;color:var(--muted)">07/jul</span>
+              <span style="font-size:10.5px;background:var(--s3);border-radius:4px;padding:2px 7px;color:var(--muted)">R$0</span>
+              <span style="font-size:11.5px;color:var(--muted)">R$0</span>
+              <span style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--muted)">—</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--s2);border-radius:var(--r-sm);padding:8px 12px">
+            <span style="font-size:12.5px;color:var(--sub)">SVI Vistorias (cópia)</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:11px;color:var(--muted)">08/jul</span>
+              <span style="font-size:10.5px;background:var(--s3);border-radius:4px;padding:2px 7px;color:var(--muted)">R$0</span>
+              <span style="font-size:11.5px;color:var(--muted)">R$0</span>
+              <span style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--muted)">—</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--s2);border-radius:var(--r-sm);padding:8px 12px">
+            <span style="font-size:12.5px;color:var(--sub)">Transpanorama Transportes S.A.Bruno Freitas Simão (cópia)</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:11px;color:var(--muted)">13/jul</span>
+              <span style="font-size:10.5px;background:var(--s3);border-radius:4px;padding:2px 7px;color:var(--muted)">R$0</span>
+              <span style="font-size:11.5px;color:var(--muted)">R$0</span>
+              <span style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--muted)">—</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--s2);border-radius:var(--r-sm);padding:8px 12px">
+            <span style="font-size:12.5px;color:var(--sub)">Usina De Açúcar Santa Terezinha Ltda (cópia)</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:11px;color:var(--muted)">17/jul</span>
+              <span style="font-size:10.5px;background:var(--s3);border-radius:4px;padding:2px 7px;color:var(--muted)">R$0</span>
+              <span style="font-size:11.5px;color:var(--muted)">R$0</span>
+              <span style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--muted)">—</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--s2);border-radius:var(--r-sm);padding:8px 12px">
+            <span style="font-size:12.5px;color:var(--sub)">Mansano Calculos e PericiasJosé Augusto Mansano de Oliveira (cópia)</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:11px;color:var(--muted)">20/jul</span>
+              <span style="font-size:10.5px;background:var(--s3);border-radius:4px;padding:2px 7px;color:var(--muted)">R$0</span>
+              <span style="font-size:11.5px;color:var(--muted)">R$0</span>
+              <span style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--muted)">—</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--s2);border-radius:var(--r-sm);padding:8px 12px">
+            <span style="font-size:12.5px;color:var(--sub)">Touch Positioning [INDICAÇÃO] (cópia)</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:11px;color:var(--muted)">25/ago</span>
+              <span style="font-size:10.5px;background:var(--s3);border-radius:4px;padding:2px 7px;color:var(--muted)">R$0</span>
+              <span style="font-size:11.5px;color:var(--muted)">R$0</span>
+              <span style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--muted)">—</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--s2);border-radius:var(--r-sm);padding:8px 12px">
+            <span style="font-size:12.5px;color:var(--sub)">Removi</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:11px;color:var(--muted)">03/set</span>
+              <span style="font-size:10.5px;background:var(--s3);border-radius:4px;padding:2px 7px;color:var(--muted)">C</span>
+              <span style="font-size:11.5px;color:var(--muted)">R$88k</span>
+              <span style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">+R$300</span>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:14px;background:var(--s2);border-radius:var(--r-sm);padding:12px 14px;font-size:11.5px;color:var(--muted);line-height:1.5">
+          Q3 em andamento &#8212; <strong style="color:var(--sub)">Set 2026</strong>. Novos fechamentos aumentam a comiss&atilde;o.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela de Portes -->
+  <div class="card" style="margin-top:14px;padding:16px 24px">
+    <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:600;margin-bottom:12px">Tabela de portes &middot; comiss&atilde;o por deal</div>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px">
+      <div style="background:var(--s2);border-radius:var(--r-sm);padding:10px;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--sub)">D</div>
+        <div style="font-size:10px;color:var(--muted);margin:3px 0">&ge; R$1</div>
+        <div style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">R$150</div>
+      </div>
+      <div style="background:var(--s2);border-radius:var(--r-sm);padding:10px;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--sub)">C</div>
+        <div style="font-size:10px;color:var(--muted);margin:3px 0">&ge; R$20k</div>
+        <div style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">R$300</div>
+      </div>
+      <div style="background:var(--s2);border-radius:var(--r-sm);padding:10px;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--sub)">B</div>
+        <div style="font-size:10px;color:var(--muted);margin:3px 0">&ge; R$90k</div>
+        <div style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">R$600</div>
+      </div>
+      <div style="background:var(--s2);border-radius:var(--r-sm);padding:10px;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--sub)">A-</div>
+        <div style="font-size:10px;color:var(--muted);margin:3px 0">&ge; R$180k</div>
+        <div style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">R$1.000</div>
+      </div>
+      <div style="background:var(--s2);border-radius:var(--r-sm);padding:10px;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--sub)">A+</div>
+        <div style="font-size:10px;color:var(--muted);margin:3px 0">&ge; R$350k</div>
+        <div style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">R$2.000</div>
+      </div>
+      <div style="background:var(--s2);border-radius:var(--r-sm);padding:10px;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--gold)">Top</div>
+        <div style="font-size:10px;color:var(--muted);margin:3px 0">&ge; R$500k</div>
+        <div style="font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--gold)">R$3.000</div>
+      </div>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:var(--muted)">Deals com valor R$0 n&atilde;o contabilizados &middot; filtro Q3/2026 = 01/07&ndash;30/09 &middot; pipeline Vendas&ndash;Lughy</div>
+  </div>
+
+  <!-- SECTION 03: LIGAÇÕES -->
+  <div class="sec-head">
+    <span class="sec-num">03</span>
+    <span class="sec-title">Liga&ccedil;&otilde;es</span>
+    <span class="sec-rule"></span>
+  </div>
+  <div class="chart-section">
+    <div class="card">
+      <div class="chart-header">
+        <span class="chart-title">Por dia &mdash; semana passada (07/09&ndash;13/09/set)</span>
+        <div class="legend">
+          <div class="leg-item"><div class="leg-dot" style="background:var(--steph)"></div> Stephanie</div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--luis)"></div> Luis</div>
+        </div>
+      </div>
+      <canvas id="cLig" height="160"></canvas>
+    </div>
+    <div class="monthly">
+      <div class="monthly-head">M&ecirc;s atual &middot; SET/2026 01/09&#8211;14/09/09</div>
+      <div class="monthly-row">
+        <span class="monthly-name">Stephanie</span>
+        <span class="monthly-val" style="color:var(--steph)">4</span>
+      </div>
+      <div class="monthly-row">
+        <span class="monthly-name">Luis</span>
+        <span class="monthly-val" style="color:var(--luis)">3</span>
+      </div>
+      <hr class="monthly-hr">
+      <div class="monthly-total">
+        <span class="monthly-total-lbl">Total m&ecirc;s</span>
+        <span class="monthly-total-val">7</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 04: ATIVIDADES -->
+  <div class="sec-head">
+    <span class="sec-num">04</span>
+    <span class="sec-title">Atividades Conclu&iacute;das</span>
+    <span class="sec-rule"></span>
+  </div>
+  <div class="chart-section">
+    <div class="card">
+      <div class="chart-header">
+        <span class="chart-title">Por dia &mdash; semana passada (07/09&ndash;13/09/set)</span>
+        <div class="legend">
+          <div class="leg-item"><div class="leg-dot" style="background:var(--steph)"></div> Stephanie</div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--luis)"></div> Luis</div>
+        </div>
+      </div>
+      <canvas id="cAtiv" height="160"></canvas>
+    </div>
+    <div class="monthly">
+      <div class="monthly-head">M&ecirc;s atual &middot; SET/2026 01/09&#8211;14/09/09</div>
+      <div class="monthly-row">
+        <span class="monthly-name">Stephanie</span>
+        <span class="monthly-val" style="color:var(--steph)">199</span>
+      </div>
+      <div class="monthly-row">
+        <span class="monthly-name">Luis</span>
+        <span class="monthly-val" style="color:var(--luis)">159</span>
+      </div>
+      <hr class="monthly-hr">
+      <div class="monthly-total">
+        <span class="monthly-total-lbl">Total m&ecirc;s</span>
+        <span class="monthly-total-val">358</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 05: REUNIÕES -->
+  <div class="sec-head">
+    <span class="sec-num">05</span>
+    <span class="sec-title">Reuni&otilde;es</span>
+    <span class="sec-rule"></span>
+  </div>
+  <div class="chart-section">
+    <div class="card">
+      <div class="chart-header">
+        <span class="chart-title">Por dia &mdash; semana passada (07/09&ndash;13/09/set)</span>
+        <div class="legend">
+          <div class="leg-item"><div class="leg-dot" style="background:var(--steph)"></div> Stephanie</div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--luis)"></div> Luis</div>
+        </div>
+      </div>
+      <canvas id="cReu" height="160"></canvas>
+    </div>
+    <div class="monthly">
+      <div class="monthly-head">M&ecirc;s atual &middot; SET/2026 01/09&#8211;14/09/09</div>
+      <div class="monthly-row">
+        <span class="monthly-name">Stephanie</span>
+        <span class="monthly-val" style="color:var(--steph)">3</span>
+      </div>
+      <div class="monthly-row">
+        <span class="monthly-name">Luis</span>
+        <span class="monthly-val" style="color:var(--luis)">7</span>
+      </div>
+      <hr class="monthly-hr">
+      <div class="monthly-total">
+        <span class="monthly-total-lbl">Total m&ecirc;s</span>
+        <span class="monthly-total-val">10</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-left">
+      <div>Liga&ccedil;&otilde;es = tipo <em>call</em> &middot; Reuni&otilde;es = <em>meeting</em> + <em>reuniao_pre_venda_</em> + <em>reuniao_de_apresentacao_de</em></div>
+      <div>Funil de convers&atilde;o: estimativa via API (deals ganhos 2026 / deals ganhos + em proposta) &middot; pipeline Vendas&ndash;Lughy</div>
+      <div>Comiss&atilde;o: Tabela de Portes &middot; Q3/2026 = 01/07&ndash;30/09 &middot; deals com valor R$0 exclu&iacute;dos</div>
+      <div>Atividades: done=true &middot; semana 07/09&ndash;13/09 e m&ecirc;s 01/09&#8211;14/09/09 &middot; apenas Stephanie (ID 24155859) e Luis (ID 13236195)</div>
+    </div>
+    <div class="footer-right">Gerado pelo GitHub Actions &middot; 14/09/2026<br>Lughy &middot; Time Comercial</div>
+  </div>
+
 </div>
 
-<div class="footer">Gerado automaticamente pelo GitHub Actions · 14/09/2026</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+(function() {
+  const s = getComputedStyle(document.documentElement);
+  const STEPH  = s.getPropertyValue('--steph').trim()  || '#4A90D9';
+  const LUIS   = s.getPropertyValue('--luis').trim()   || '#2ECC9A';
+  const BORDER = s.getPropertyValue('--border').trim() || '#252a45';
+  const MUTED  = s.getPropertyValue('--muted').trim()  || '#5e658a';
+
+  const DAYS = ["Seg 07", "Ter 08", "Qua 09", "Qui 10", "Sex 11", "S\u00e1b 12", "Dom 13"];
+
+  const baseOpts = {
+    responsive:true,
+    plugins:{
+      legend:{display:false},
+      tooltip:{mode:'index',intersect:false,backgroundColor:'#1b2038',titleColor:'#e6eaf5',bodyColor:'#9aa0c0',borderColor:'#252a45',borderWidth:1,padding:10}
+    },
+    scales:{
+      x:{grid:{color:BORDER},ticks:{color:MUTED,font:{family:'DM Sans',size:11}}},
+      y:{beginAtZero:true,grid:{color:BORDER},ticks:{color:MUTED,font:{family:'DM Sans',size:11},stepSize:1,precision:0}}
+    }
+  };
+
+  function ds(label,data,color){
+    return{label,data,backgroundColor:color+'bb',hoverBackgroundColor:color,borderRadius:4,borderSkipped:false};
+  }
+
+  new Chart(document.getElementById('cLig'),{
+    type:'bar',
+    data:{labels:DAYS,datasets:[
+      ds('Stephanie',[0, 1, 2, 0, 0, 0, 0],STEPH),
+      ds('Luis',     [0, 0, 0, 0, 1, 0, 0],LUIS)
+    ]},
+    options:{...baseOpts,scales:{...baseOpts.scales,y:{...baseOpts.scales.y,max:Math.max(5,...[0, 1, 2, 0, 0, 0, 0],...[0, 0, 0, 0, 1, 0, 0])+1}}}
+  });
+
+  new Chart(document.getElementById('cAtiv'),{
+    type:'bar',
+    data:{labels:DAYS,datasets:[
+      ds('Stephanie',[7, 33, 23, 20, 18, 0, 0],STEPH),
+      ds('Luis',     [0, 25, 10, 20, 14, 0, 0],LUIS)
+    ]},
+    options:{...baseOpts,scales:{...baseOpts.scales,y:{...baseOpts.scales.y,ticks:{...baseOpts.scales.y.ticks,stepSize:5}}}}
+  });
+
+  new Chart(document.getElementById('cReu'),{
+    type:'bar',
+    data:{labels:DAYS,datasets:[
+      ds('Stephanie',[0, 0, 0, 2, 0, 0, 0],STEPH),
+      ds('Luis',     [0, 1, 1, 0, 2, 0, 0],LUIS)
+    ]},
+    options:baseOpts
+  });
+})();
+</script>
+
 </body>
 </html>
